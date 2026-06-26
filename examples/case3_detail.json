@@ -1,0 +1,21 @@
+{
+  "silp": "v1",
+  "version": "ir-v0.1",
+  "intent": "!TRANSLATE",
+  "entities": [
+    {"id": "src", "value": "fr_rev_bold"},
+    {"id": "tgt", "value": "shakespeare_en"},
+    {"id": "style", "value": "archaic_heavy"}
+  ],
+  "constraints": [],
+  "alternatives": [],
+  "meta": {
+    "priority": 1,
+    "confidence": 0.85,
+    "seq": [],
+    "out": "natural",
+    "next_agent": null,
+    "req_id": "c1d4",
+    "session_id": null
+  }
+}

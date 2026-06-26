@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "silp"
+version = "0.1.0"
+description = "SILP — Semantic Interlingua Layer Protocol: a black-box text-interface payload codec for agent-to-agent communication"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "pydantic>=2.5",
+    "click>=8.1",
+    "rich>=13.7",
+]
+
+[project.optional-dependencies]
+ml = [
+    "torch>=2.1",
+    "transformers>=4.36",
+    "tiktoken>=0.5",
+]
+api = [
+    "openai>=1.6",
+    "anthropic>=0.18",
+    "google-generativeai>=0.3",
+]
+analysis = [
+    "pandas>=2.1",
+    "scipy>=1.11",
+    "matplotlib>=3.7",
+    "seaborn>=0.13",
+]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.1",
+]
+
+[project.scripts]
+silpc = "silp.cli.main:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

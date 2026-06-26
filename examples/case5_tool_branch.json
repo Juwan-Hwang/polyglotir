@@ -1,0 +1,21 @@
+{
+  "silp": "v1",
+  "version": "ir-v0.1",
+  "intent": "!SWITCH_TOOL",
+  "entities": [
+    {"id": "act", "value": "indoor_activity", "action": "!SWITCH_TOOL"}
+  ],
+  "constraints": [
+    {"type": "weather", "value": "rain", "operator": ">"}
+  ],
+  "alternatives": [],
+  "meta": {
+    "priority": 1,
+    "confidence": 0.9,
+    "seq": [],
+    "out": "natural",
+    "next_agent": null,
+    "req_id": "e5f8",
+    "session_id": null
+  }
+}

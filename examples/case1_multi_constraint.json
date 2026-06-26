@@ -1,0 +1,22 @@
+{
+  "silp": "v1",
+  "version": "ir-v0.1",
+  "intent": "!CANCEL",
+  "entities": [
+    {"id": "act", "value": "flight", "action": "!CANCEL"},
+    {"id": "notify", "value": "zhangsan", "action": "!EMAIL"}
+  ],
+  "constraints": [
+    {"type": "loc", "value": "Beijing", "time": "t+1am", "subject": "me"}
+  ],
+  "alternatives": [],
+  "meta": {
+    "priority": 1,
+    "confidence": 0.9,
+    "seq": ["reason_first"],
+    "out": "natural",
+    "next_agent": null,
+    "req_id": "a3f9",
+    "session_id": null
+  }
+}
