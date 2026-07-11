@@ -202,8 +202,21 @@ def _build_judge_result(data: dict, judge_name: str, raw: str) -> JudgeResult:
 # ── Rule-based judge (fast pre-filter, Chinese-aware) ─────────────────
 
 
+# ── Bilingual synonym tables ─────────────────────────────────────────
+#
+# Phase 0.5 analysis revealed four systematic false-negative patterns in
+# the rule judge:
+#
+#   1. Chinese translation  — model says "北京" but rule looks for "beijing"
+#   2. Boolean sentinels    — constraint value "true" is meaningless to search
+#   3. Compound decomposition — "fr_rev_bold" is explained as fr+rev+bold
+#   4. Unit normalisation   — "30s" appears as "30秒" / "30 seconds"
+#
+# The tables and logic below address all four.  False positives (fabrication,
+# semantic misunderstanding) are inherently beyond rule-based judging and
+# remain the responsibility of the LLM judge.
+
 # Verb synonyms: English + Chinese.
-# The rule judge checks if any of these appear in the (lowercased) response.
 _VERB_SYNONYMS: dict[str, list[str]] = {
     "cancel": ["取消", "撤销", "废除", "cancell", "void", "abort"],
     "start": ["开始", "启动", "发起", "begin", "launch", "initiate"],
@@ -216,13 +229,70 @@ _VERB_SYNONYMS: dict[str, list[str]] = {
     "route": ["路由", "转派", "分配", "direct", "assign", "transfer"],
     "search": ["搜索", "查找", "检索", "find", "lookup", "query"],
     "switch": ["切换", "转换", "切换工具", "switch_tool"],
-    "switch_tool": ["切换", "转换工具", "切换工具", "switch"],  # backward compat
-    "escalate": ["升级", "上报", "提升", "raise", "promote", "advance"],  # backward compat
+    "switch_tool": ["切换", "转换工具", "切换工具", "switch"],
+    "escalate": ["升级", "上报", "提升", "raise", "promote", "advance"],
     "suggest": ["建议", "推荐", "提议", "recommend", "propose"],
 }
 
+# Bilingual entity-value map: English → Chinese equivalents.
+# Keys are lowercased.  Values are lists of substrings to search for in the
+# (already lowercased) response.  Order: most specific first.
+_ENTITY_CN_MAP: dict[str, list[str]] = {
+    # ── Locations ──
+    "beijing": ["北京"],
+    "shanghai": ["上海"],
+    "downtown": ["市中心", "市区"],
+    # ── Travel ──
+    "flight": ["航班", "机票", "飞机"],
+    "hotel": ["酒店", "旅馆"],
+    # ── Activities ──
+    "hike": ["徒步", "远足", "登山"],
+    "cards": ["纸牌", "打牌", "卡牌"],
+    "indoor": ["室内"],
+    "indoor_activity": ["室内活动"],
+    # ── Food / search ──
+    "restaurants": ["餐厅"],
+    "italian": ["意大利"],
+    "delivery_options": ["外卖", "配送"],
+    "open_now": ["营业中", "正在营业", "营业"],
+    # ── Business / ticketing ──
+    "billing": ["账单", "计费"],
+    "manager": ["经理", "主管"],
+    "tech_support": ["技术支持"],
+    "ticket": ["工单"],
+    # ── Data objects ──
+    "data": ["数据"],
+    "report": ["报告"],
+    "result": ["结果"],
+    # ── Weather ──
+    "weather": ["天气"],
+    "rain": ["雨", "下雨"],
+    # ── Booking constraints ──
+    "budget": ["预算"],
+    "rating": ["评分"],
+    "urgency": ["紧急", "优先级"],
+    "high": ["高"],
+    "category": ["类别", "分类"],
+    "shipped": ["已发货", "发货"],
+    "verified": ["已验证", "已认证", "验证通过"],
+    # ── System / protocol ──
+    "timeout": ["超时"],
+    "auth": ["认证", "身份验证"],
+    "status": ["状态"],
+    "loc": ["位置", "地点"],
+    "address": ["地址"],
+    # ── Style values (compound — also handled by decomposition) ──
+    "archaic_heavy": ["重度古风", "重度古语", "古风重度"],
+    "shakespeare_en": ["莎士比亚", "莎翁"],
+    "fr_rev_bold": ["法语革命", "法文革命"],
+}
+
+# Boolean sentinel values — meaningless to search for in a response.
+# These appear as constraint ``value`` when the ``type`` encodes the real
+# semantics (e.g. ``{"type": "!rain", "value": "true"}``).
+_SENTINEL_VALUES = frozenset({"true", "false", "null", "none", ""})
+
 # Negation markers: English + Chinese.
-# Used to check if a negated constraint is correctly expressed in the response.
 _NEGATION_MARKERS = [
     # English
     "not", "no ", "without", "isn't", "aren't", "don't", "doesn't",
@@ -343,18 +413,60 @@ class RuleJudge:
 def _find_value(value: str, response_lower: str) -> bool:
     """Check if *value* appears in *response_lower*, with normalization.
 
-    Handles:
-    - Exact match (lowercase)
-    - Underscore → space (``order_42`` → ``order 42``)
-    - Underscore removed (``order_42`` → ``order42``)
+    Handles (in priority order):
+    1. Boolean sentinels (``"true"``/``"false"``) → always match
+    2. Exact match (lowercase)
+    3. Underscore variants (``order_42`` → ``order 42`` / ``order42``)
+    4. Chinese translation (``beijing`` → ``北京``)
+    5. Compound decomposition (``fr_rev_bold`` → all of fr, rev, bold)
+    6. Time-unit normalisation (``30s`` → ``30秒`` / ``30 seconds``)
     """
     val_lower = value.lower()
+
+    # 1. Boolean sentinels — meaningless to search for
+    if val_lower in _SENTINEL_VALUES:
+        return True
+
+    # 2–4. Build and check variant list
     variants = [
         val_lower,
         val_lower.replace("_", " "),
         val_lower.replace("_", ""),
     ]
-    return any(v in response_lower for v in variants)
+    if val_lower in _ENTITY_CN_MAP:
+        variants.extend(_ENTITY_CN_MAP[val_lower])
+    if any(v in response_lower for v in variants):
+        return True
+
+    # 5. Compound decomposition: check each underscore-separated part
+    if "_" in val_lower:
+        parts = val_lower.split("_")
+        part_lookups = []
+        for part in parts:
+            pv = [part]
+            if part in _ENTITY_CN_MAP:
+                pv.extend(_ENTITY_CN_MAP[part])
+            part_lookups.append(pv)
+        if all(any(v in response_lower for v in pvs) for pvs in part_lookups):
+            return True
+
+    # 6. Time-unit normalisation: ``30s`` → ``30``, ``30秒``, ``30 seconds``
+    for suffix in ("ms", "min", "sec", "s"):
+        if val_lower.endswith(suffix) and len(val_lower) > len(suffix):
+            numeric = val_lower[: -len(suffix)]
+            if numeric and any(c.isdigit() for c in numeric):
+                unit_variants = [
+                    numeric,
+                    f"{numeric}秒",
+                    f"{numeric} second",
+                    f"{numeric} seconds",
+                    f"{numeric}-second",
+                ]
+                if any(v in response_lower for v in unit_variants):
+                    return True
+            break  # only try the longest matching suffix
+
+    return False
 
 
 # ── Dual Judge (rule + LLM) ───────────────────────────────────────────

@@ -2,24 +2,25 @@
 """Cross-tokenizer census — Phase 0 core deliverable.
 
 Measures how SILP verbs, frontend outputs, and control strings are tokenized
-across five tokenizer families:
+across six tokenizer families:
 
-    ┌───────────────┬──────────────────────────────────┐
-    │ Tokenizer     │ Models                           │
-    ├───────────────┼──────────────────────────────────┤
-    │ tiktoken      │ GPT-4o, GPT-3.5                  │
-    │ LlamaTokenizer│ Llama-2/3                        │
-    │ Qwen2Tokenizer│ Qwen2.5                          │
-    │ Claude        │ Claude-3 (via API rule estimate) │
-    │ Gemini        │ Gemini (via API rule estimate)   │
-    └───────────────┴──────────────────────────────────┘
+    ┌───────────────┬──────────────────────────────────────────┐
+    │ Tokenizer     │ Source                                   │
+    ├───────────────┼──────────────────────────────────────────┤
+    │ tiktoken      │ GPT-4o (o200k_base), GPT-3.5 (cl100k_base)│
+    │ LlamaTokenizer│ Llama-2 (NousResearch/Llama-2-7b-hf)     │
+    │ Qwen2Tokenizer│ Qwen2.5 (Qwen/Qwen2.5-0.5B)              │
+    │ Claude        │ Claude-3 (Xenova/claude-tokenizer, BPE)  │
+    │ Gemini        │ Gemini (Xenova/gemma-tokenizer, SPM)     │
+    └───────────────┴──────────────────────────────────────────┘
+
+Claude's tokenizer is a community reverse-engineering of Claude-3's BPE
+(vocab ≈ 65 k).  Gemini's tokenizer uses the Gemma SentencePiece model
+(vocab = 256 k), which shares the same vocabulary and training corpus
+family as Gemini.
 
 Output CSV columns:
     string, tokenizer, token_count, is_single_token, tokens, is_unk
-
-For closed-source models (Claude/Gemini) where the tokenizer is not publicly
-available, we use the API's ``count_tokens`` endpoint if available, or fall
-back to a tiktoken cl100k estimate with a ``_estimated`` suffix.
 
 Usage::
 
@@ -293,9 +294,13 @@ def build_tokenizers(
         models = hf_models or [
             # Open-access mirrors (originals are gated):
             # - NousResearch/Llama-2-7b-hf  = same tokenizer as meta-llama/Llama-2-7b-hf
-            # - meta-llama/Meta-Llama-3-8B  = gated, so use open mirror
+            # - Qwen/Qwen2.5-0.5B           = open, lightweight
+            # - Xenova/claude-tokenizer     = community port of Claude-3 BPE (vocab ≈ 65 k)
+            # - Xenova/gemma-tokenizer      = Gemma SPM tokenizer, same family as Gemini (vocab = 256 k)
             ("NousResearch/Llama-2-7b-hf", "llama-2"),
             ("Qwen/Qwen2.5-0.5B", "qwen2.5"),
+            ("Xenova/claude-tokenizer", "claude"),
+            ("Xenova/gemma-tokenizer", "gemini"),
         ]
         for model_name, display_name in models:
             try:

@@ -167,10 +167,13 @@ def main() -> None:
     from silp.frontend import get_frontend, list_frontends
     from silp.ir import validate as validate_ir
 
-    # Frontends that support round-trip (exclude natural — control baseline)
+    # Frontends that support round-trip.
+    # Exclude control baselines (natural, nl_json, llmlingua2) — they are
+    # not round-trip codecs by design.
+    _NON_ROUNDTRIP = {"natural", "nl_json", "llmlingua2"}
     roundtrip_frontends = [
         f for f in list_frontends()
-        if f != "natural"
+        if f not in _NON_ROUNDTRIP
     ]
 
     # Load all example cases

@@ -57,9 +57,14 @@ class LLMLingua2Frontend(Frontend):
                 "llmlingua not installed. Run: pip install llmlingua"
             ) from exc
 
-        # LLMLingua-2 uses a small BERT-based model for token-level
-        # compression. ``use_llmlingua2=True`` enables the v2 algorithm.
-        self._compressor = PromptCompressor(use_llmlingua2=True)
+        # LLMLingua-2 uses a trained XLM-RoBERTa model for token-level
+        # compression. The model_name must point to the LLMLingua-2 model,
+        # NOT the default Llama-2-7b (which is for LLMLingua v1).
+        self._compressor = PromptCompressor(
+            model_name="microsoft/llmlingua-2-xlm-roberta-large-meetingbank",
+            use_llmlingua2=True,
+            device_map="cpu",
+        )
         return self._compressor
 
     def compile(self, ir: SilpIR) -> str:
@@ -69,7 +74,7 @@ class LLMLingua2Frontend(Frontend):
         compressed = compressor.compress_prompt(
             prose,
             rate=self.rate,
-            force_tokens=None,  # no forced tokens — pure compression
+            force_tokens=[],  # no forced tokens — pure compression
             drop_consecutive=False,
         )
 

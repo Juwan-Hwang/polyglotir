@@ -251,11 +251,11 @@ def run_matrix(
     _write_spearman(spearman)
 
     n_points = len(cases) * len(frontends)
-    print(f"\n  Data points per model: {n_points}", file=sys.stderr)
-    if n_points >= 150:
-        print(f"  >= 150 points - Spearman correlation is valid", file=sys.stderr)
+    print(f"\n  Data points per model pair: {n_points}", file=sys.stderr)
+    if n_points >= 30:
+        print(f"  {n_points} points - Spearman correlation is valid (threshold=30)", file=sys.stderr)
     else:
-        print(f"  WARNING: {n_points} < 150 - need more cases/frontends", file=sys.stderr)
+        print(f"  WARNING: {n_points} < 30 - need more cases/frontends", file=sys.stderr)
 
     print(f"\n  Raw JSONL:       {RAW_DIR}", file=sys.stderr)
     print(f"  Matrix CSV:      {PROCESSED_DIR}/phase2_matrix.csv", file=sys.stderr)
@@ -341,6 +341,20 @@ def _write_retry_audit(results) -> None:
 
 
 def _compute_spearman(results, frontends, models) -> dict:
+    """Compute Spearman rank correlation between model pairs.
+
+    Uses per-case, per-frontend binary outcomes (pass=1, fail=0) as
+    paired data points -- not aggregated frontend rates.  This gives
+    n_cases x n_frontends data points per model pair.
+    """
+    model_outcomes: dict[str, dict[tuple[str, str], int]] = {}
+    for m in models:
+        model_outcomes[m] = {}
+        for r in results:
+            if r["model"] == m:
+                key = (r["case_id"], r["frontend"])
+                model_outcomes[m][key] = 1 if r["first_pass"] else 0
+
     model_fe_rates: dict[str, dict[str, float]] = {}
     for m in models:
         model_fe_rates[m] = {}
@@ -351,25 +365,28 @@ def _compute_spearman(results, frontends, models) -> dict:
     pairs: list[dict] = []
     for i, m1 in enumerate(models):
         for m2 in models[i + 1:]:
-            rates1 = [model_fe_rates[m1][fe] for fe in frontends]
-            rates2 = [model_fe_rates[m2][fe] for fe in frontends]
-            rho = _spearman_rho(rates1, rates2)
+            common_keys = sorted(
+                set(model_outcomes[m1].keys()) & set(model_outcomes[m2].keys())
+            )
+            v1 = [model_outcomes[m1][k] for k in common_keys]
+            v2 = [model_outcomes[m2][k] for k in common_keys]
+            rho = _spearman_rho(v1, v2)
             pairs.append({
                 "model_a": m1, "model_b": m2,
                 "spearman_rho": round(rho, 4),
-                "n_frontends": len(frontends),
-                "rates_a": dict(zip(frontends, [round(r, 4) for r in rates1])),
-                "rates_b": dict(zip(frontends, [round(r, 4) for r in rates2])),
+                "n_data_points": len(common_keys),
+                "rates_a": dict(zip(frontends, [round(model_fe_rates[m1][fe], 4) for fe in frontends])),
+                "rates_b": dict(zip(frontends, [round(model_fe_rates[m2][fe], 4) for fe in frontends])),
             })
 
-    n_points = len(frontends)
+    n_points = len(common_keys) if pairs else 0
     return {
         "pairs": pairs,
         "n_data_points": n_points,
         "n_models": len(models),
         "n_frontends": len(frontends),
-        "valid": n_points >= 150,
-        "note": "Spearman valid (>=150 points)" if n_points >= 150 else f"Only {n_points} points - need >=150",
+        "valid": n_points >= 30,
+        "note": f"Spearman valid ({n_points} points, threshold=30)" if n_points >= 30 else f"Only {n_points} points - need >=30",
     }
 
 

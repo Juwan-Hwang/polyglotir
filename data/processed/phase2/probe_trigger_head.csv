@@ -3,59 +3,89 @@ header,tokenizer,token_count,tokens,first_token,last_token,roundtrip_ok
 //silp:v1,gpt-3.5,5,"[""//"", ""sil"", ""p"", "":v"", ""1""]",//,1,True
 //silp:v1,llama-2,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""1""]",//,1,True
 //silp:v1,qwen2.5,5,"[""//"", ""sil"", ""p"", "":v"", ""1""]",//,1,True
+//silp:v1,claude,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""1""]",//,1,True
+//silp:v1,gemini,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""1""]",//,1,True
 //silp:v2,gpt-4o,5,"[""//"", ""sil"", ""p"", "":v"", ""2""]",//,2,True
 //silp:v2,gpt-3.5,5,"[""//"", ""sil"", ""p"", "":v"", ""2""]",//,2,True
 //silp:v2,llama-2,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""2""]",//,2,True
 //silp:v2,qwen2.5,5,"[""//"", ""sil"", ""p"", "":v"", ""2""]",//,2,True
+//silp:v2,claude,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""2""]",//,2,True
+//silp:v2,gemini,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""2""]",//,2,True
 $silp:v1,gpt-4o,5,"[""$s"", ""il"", ""p"", "":v"", ""1""]",$s,1,True
 $silp:v1,gpt-3.5,5,"[""$s"", ""il"", ""p"", "":v"", ""1""]",$s,1,True
 $silp:v1,llama-2,6,"[""$"", ""sil"", ""p"", "":"", ""v"", ""1""]",$,1,True
 $silp:v1,qwen2.5,5,"[""$s"", ""il"", ""p"", "":v"", ""1""]",$s,1,True
+$silp:v1,claude,6,"[""$"", ""sil"", ""p"", "":"", ""v"", ""1""]",$,1,True
+$silp:v1,gemini,6,"[""$"", ""sil"", ""p"", "":"", ""v"", ""1""]",$,1,True
 ##silp:v1,gpt-4o,5,"[""##"", ""sil"", ""p"", "":v"", ""1""]",##,1,True
 ##silp:v1,gpt-3.5,5,"[""##"", ""sil"", ""p"", "":v"", ""1""]",##,1,True
 ##silp:v1,llama-2,6,"[""##"", ""sil"", ""p"", "":"", ""v"", ""1""]",##,1,True
 ##silp:v1,qwen2.5,5,"[""##"", ""sil"", ""p"", "":v"", ""1""]",##,1,True
+##silp:v1,claude,6,"[""##"", ""sil"", ""p"", "":"", ""v"", ""1""]",##,1,True
+##silp:v1,gemini,6,"[""##"", ""sil"", ""p"", "":"", ""v"", ""1""]",##,1,True
 #silp:v1,gpt-4o,5,"[""#"", ""sil"", ""p"", "":v"", ""1""]",#,1,True
 #silp:v1,gpt-3.5,5,"[""#"", ""sil"", ""p"", "":v"", ""1""]",#,1,True
 #silp:v1,llama-2,6,"[""#"", ""sil"", ""p"", "":"", ""v"", ""1""]",#,1,True
 #silp:v1,qwen2.5,5,"[""#"", ""sil"", ""p"", "":v"", ""1""]",#,1,True
+#silp:v1,claude,6,"[""#"", ""sil"", ""p"", "":"", ""v"", ""1""]",#,1,True
+#silp:v1,gemini,6,"[""#"", ""sil"", ""p"", "":"", ""v"", ""1""]",#,1,True
 //s:v1,gpt-4o,4,"[""//"", ""s"", "":v"", ""1""]",//,1,True
 //s:v1,gpt-3.5,4,"[""//"", ""s"", "":v"", ""1""]",//,1,True
 //s:v1,llama-2,5,"[""//"", ""s"", "":"", ""v"", ""1""]",//,1,True
 //s:v1,qwen2.5,4,"[""//"", ""s"", "":v"", ""1""]",//,1,True
+//s:v1,claude,5,"[""//"", ""s"", "":"", ""v"", ""1""]",//,1,True
+//s:v1,gemini,5,"[""//"", ""s"", "":"", ""v"", ""1""]",//,1,True
 $s:v1,gpt-4o,3,"[""$s"", "":v"", ""1""]",$s,1,True
 $s:v1,gpt-3.5,3,"[""$s"", "":v"", ""1""]",$s,1,True
 $s:v1,llama-2,5,"[""$"", ""s"", "":"", ""v"", ""1""]",$,1,True
 $s:v1,qwen2.5,3,"[""$s"", "":v"", ""1""]",$s,1,True
+$s:v1,claude,5,"[""$"", ""s"", "":"", ""v"", ""1""]",$,1,True
+$s:v1,gemini,5,"[""$"", ""s"", "":"", ""v"", ""1""]",$,1,True
 //silp:v0,gpt-4o,5,"[""//"", ""sil"", ""p"", "":v"", ""0""]",//,0,True
 //silp:v0,gpt-3.5,5,"[""//"", ""sil"", ""p"", "":v"", ""0""]",//,0,True
 //silp:v0,llama-2,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""0""]",//,0,True
 //silp:v0,qwen2.5,5,"[""//"", ""sil"", ""p"", "":v"", ""0""]",//,0,True
+//silp:v0,claude,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""0""]",//,0,True
+//silp:v0,gemini,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""0""]",//,0,True
 //silp:v9,gpt-4o,5,"[""//"", ""sil"", ""p"", "":v"", ""9""]",//,9,True
 //silp:v9,gpt-3.5,5,"[""//"", ""sil"", ""p"", "":v"", ""9""]",//,9,True
 //silp:v9,llama-2,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""9""]",//,9,True
 //silp:v9,qwen2.5,5,"[""//"", ""sil"", ""p"", "":v"", ""9""]",//,9,True
+//silp:v9,claude,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""9""]",//,9,True
+//silp:v9,gemini,6,"[""//"", ""sil"", ""p"", "":"", ""v"", ""9""]",//,9,True
 //,gpt-4o,1,"[""//""]",//,//,True
 //,gpt-3.5,1,"[""//""]",//,//,True
 //,llama-2,1,"[""//""]",//,//,True
 //,qwen2.5,1,"[""//""]",//,//,True
+//,claude,1,"[""//""]",//,//,True
+//,gemini,1,"[""//""]",//,//,True
 $,gpt-4o,1,"[""$""]",$,$,True
 $,gpt-3.5,1,"[""$""]",$,$,True
 $,llama-2,1,"[""$""]",$,$,True
 $,qwen2.5,1,"[""$""]",$,$,True
+$,claude,1,"[""$""]",$,$,True
+$,gemini,1,"[""$""]",$,$,True
 ##,gpt-4o,1,"[""##""]",##,##,True
 ##,gpt-3.5,1,"[""##""]",##,##,True
 ##,llama-2,1,"[""##""]",##,##,True
 ##,qwen2.5,1,"[""##""]",##,##,True
+##,claude,1,"[""##""]",##,##,True
+##,gemini,1,"[""##""]",##,##,True
 //silp:v1 cancel(flight),gpt-4o,9,"[""//"", ""sil"", ""p"", "":v"", ""1"", "" cancel"", ""(f"", ""light"", "")""]",//,),True
 //silp:v1 cancel(flight),gpt-3.5,9,"[""//"", ""sil"", ""p"", "":v"", ""1"", "" cancel"", ""(f"", ""light"", "")""]",//,),True
 //silp:v1 cancel(flight),llama-2,11,"[""//"", ""sil"", ""p"", "":"", ""v"", ""1"", ""cancel"", ""("", ""fl"", ""ight"", "")""]",//,),True
 //silp:v1 cancel(flight),qwen2.5,9,"[""//"", ""sil"", ""p"", "":v"", ""1"", "" cancel"", ""(f"", ""light"", "")""]",//,),True
+//silp:v1 cancel(flight),claude,10,"[""//"", ""sil"", ""p"", "":"", ""v"", ""1"", "" cancel"", ""("", ""flight"", "")""]",//,),True
+//silp:v1 cancel(flight),gemini,10,"[""//"", ""sil"", ""p"", "":"", ""v"", ""1"", "" cancel"", ""("", ""flight"", "")""]",//,),True
 $silp:v1 cancel(flight),gpt-4o,9,"[""$s"", ""il"", ""p"", "":v"", ""1"", "" cancel"", ""(f"", ""light"", "")""]",$s,),True
 $silp:v1 cancel(flight),gpt-3.5,9,"[""$s"", ""il"", ""p"", "":v"", ""1"", "" cancel"", ""(f"", ""light"", "")""]",$s,),True
 $silp:v1 cancel(flight),llama-2,11,"[""$"", ""sil"", ""p"", "":"", ""v"", ""1"", ""cancel"", ""("", ""fl"", ""ight"", "")""]",$,),True
 $silp:v1 cancel(flight),qwen2.5,9,"[""$s"", ""il"", ""p"", "":v"", ""1"", "" cancel"", ""(f"", ""light"", "")""]",$s,),True
+$silp:v1 cancel(flight),claude,10,"[""$"", ""sil"", ""p"", "":"", ""v"", ""1"", "" cancel"", ""("", ""flight"", "")""]",$,),True
+$silp:v1 cancel(flight),gemini,10,"[""$"", ""sil"", ""p"", "":"", ""v"", ""1"", "" cancel"", ""("", ""flight"", "")""]",$,),True
 //silp:v1\ncancel(flight),gpt-4o,10,"[""//"", ""sil"", ""p"", "":v"", ""1"", ""\\n"", ""cancel"", ""(f"", ""light"", "")""]",//,),True
 //silp:v1\ncancel(flight),gpt-3.5,11,"[""//"", ""sil"", ""p"", "":v"", ""1"", ""\\"", ""nc"", ""ancel"", ""(f"", ""light"", "")""]",//,),True
 //silp:v1\ncancel(flight),llama-2,13,"[""//"", ""sil"", ""p"", "":"", ""v"", ""1"", ""\\"", ""n"", ""cancel"", ""("", ""fl"", ""ight"", "")""]",//,),True
 //silp:v1\ncancel(flight),qwen2.5,11,"[""//"", ""sil"", ""p"", "":v"", ""1"", ""\\"", ""nc"", ""ancel"", ""(f"", ""light"", "")""]",//,),True
+//silp:v1\ncancel(flight),claude,12,"[""//"", ""sil"", ""p"", "":"", ""v"", ""1"", ""\\"", ""nc"", ""ancel"", ""("", ""flight"", "")""]",//,),True
+//silp:v1\ncancel(flight),gemini,12,"[""//"", ""sil"", ""p"", "":"", ""v"", ""1"", ""\\"", ""n"", ""cancel"", ""("", ""flight"", "")""]",//,),True

@@ -1,0 +1,6 @@
+case_id,frontend,model,retries,verdict,elapsed,reason
+case5_tool_branch,json,deepseek-v3.2,1,pass,10.85,"The model correctly identified the main action as switching to indoor activity, accurately captured the constraint condi"
+case1_multi_constraint,json,kimi-k2.6,1,pass,7.07,模型正确识别了所有核心意图、实体、约束条件和通知目标，语义完全匹配。
+case10_multi_turn,json,minimax-m2.7,2,fail,0.00,Model error: timed out
+case7_parallel_action,json,minimax-m2.7,2,pass,13.39,模型正确识别了核心意图!FETCH、实体data、动作处理流程和超时约束条件。
+case7_parallel_action,llmlingua2,minimax-m2.7,1,fail,15.96,模型错误地将'fetch data'理解为发生超时的失败触发事件，而非意图执行的主要动作，且未识别出'EMAIL'作为具体动作类型。
