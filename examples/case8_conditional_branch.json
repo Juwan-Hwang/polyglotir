@@ -1,0 +1,25 @@
+{
+  "silp": "v1",
+  "version": "ir-v0.1",
+  "intent": "!ROUTE",
+  "entities": [
+    {"id": "act", "value": "ticket", "action": "!ROUTE"}
+  ],
+  "constraints": [
+    {"type": "urgency", "value": "high", "operator": "=="},
+    {"type": "category", "value": "billing"}
+  ],
+  "alternatives": [
+    {"action": "!ROUTE", "target": "tech_support"},
+    {"action": "!ESCALATE", "target": "manager"}
+  ],
+  "meta": {
+    "priority": 1,
+    "confidence": 0.8,
+    "seq": [],
+    "out": "natural",
+    "next_agent": null,
+    "req_id": "a1b2",
+    "session_id": null
+  }
+}

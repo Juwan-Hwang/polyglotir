@@ -1,0 +1,24 @@
+{
+  "silp": "v1",
+  "version": "ir-v0.1",
+  "intent": "!UPDATE",
+  "entities": [
+    {"id": "act", "value": "order_42", "action": "!UPDATE"},
+    {"id": "field", "value": "address"},
+    {"id": "new_value", "value": "5_Tianfu_Ave"}
+  ],
+  "constraints": [
+    {"type": "auth", "value": "verified", "subject": "user"},
+    {"type": "status", "value": "shipped", "operator": "!="}
+  ],
+  "alternatives": [],
+  "meta": {
+    "priority": 2,
+    "confidence": 0.75,
+    "seq": ["verify_auth", "check_status", "apply_update"],
+    "out": "natural",
+    "next_agent": null,
+    "req_id": "b3c5",
+    "session_id": "a1"
+  }
+}

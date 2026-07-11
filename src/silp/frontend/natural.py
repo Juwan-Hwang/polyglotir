@@ -33,7 +33,13 @@ class NaturalFrontend(Frontend):
                     cond_parts.append(f"not {negated}" if not c.time
                                      else f"not {negated} at {c.time}")
                 else:
-                    fragment = f"{c.type} is {c.value}"
+                    operator = getattr(c, "operator", None)
+                    if operator:
+                        # Operator form: "status is not shipped", "budget is at most 500"
+                        op_phrase = _OPERATOR_PHRASES.get(operator, operator)
+                        fragment = f"{c.type} {op_phrase} {c.value}"
+                    else:
+                        fragment = f"{c.type} is {c.value}"
                     if c.time:
                         fragment += f" at {c.time}"
                     cond_parts.append(fragment)
@@ -93,6 +99,12 @@ _VERB_PHRASES: dict[str, str] = {
     "PROCESS": "process",
     "TRANSLATE": "translate",
     "SWITCH_TOOL": "switch to",
+    "BOOK": "book",
+    "ROUTE": "route",
+    "SEARCH": "search",
+    "UPDATE": "update",
+    "ESCALATE": "escalate",
+    "SUGGEST": "suggest",
 }
 
 
@@ -100,3 +112,14 @@ def _verb_to_phrase(action_code: str) -> str:
     """``!CANCEL`` → ``"cancel"`` (or a human-friendly phrase)."""
     verb = action_code[1:]
     return _VERB_PHRASES.get(verb, verb.lower())
+
+
+# Operator → natural-language phrase mapping.
+_OPERATOR_PHRASES: dict[str, str] = {
+    "!=": "is not",
+    "==": "is",
+    "<=": "is at most",
+    ">=": "is at least",
+    "<": "is less than",
+    ">": "is greater than",
+}

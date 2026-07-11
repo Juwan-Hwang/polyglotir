@@ -1,0 +1,26 @@
+{
+  "silp": "v1",
+  "version": "ir-v0.1",
+  "intent": "!SEARCH",
+  "entities": [
+    {"id": "act", "value": "restaurants", "action": "!SEARCH"},
+    {"id": "query", "value": "italian"},
+    {"id": "location", "value": "Beijing"},
+    {"id": "filter", "value": "open_now"}
+  ],
+  "constraints": [
+    {"type": "rating", "value": "4.5", "operator": ">="}
+  ],
+  "alternatives": [
+    {"action": "!SUGGEST", "target": "delivery_options"}
+  ],
+  "meta": {
+    "priority": 1,
+    "confidence": 0.9,
+    "seq": [],
+    "out": "natural",
+    "next_agent": "search_agent",
+    "req_id": "e7f4",
+    "session_id": null
+  }
+}

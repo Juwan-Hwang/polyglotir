@@ -1,0 +1,26 @@
+{
+  "silp": "v1",
+  "version": "ir-v0.1",
+  "intent": "!BOOK",
+  "entities": [
+    {"id": "act", "value": "hotel", "action": "!BOOK"},
+    {"id": "city", "value": "Shanghai"},
+    {"id": "checkin", "value": "t+3"},
+    {"id": "nights", "value": "2"}
+  ],
+  "constraints": [
+    {"type": "budget", "value": "500", "operator": "<="},
+    {"type": "rating", "value": "4.0", "operator": ">="},
+    {"type": "loc", "value": "downtown", "subject": "hotel"}
+  ],
+  "alternatives": [],
+  "meta": {
+    "priority": 1,
+    "confidence": 0.85,
+    "seq": [],
+    "out": "natural",
+    "next_agent": null,
+    "req_id": "f2a1",
+    "session_id": null
+  }
+}

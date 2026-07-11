@@ -1,0 +1,23 @@
+{
+  "silp": "v1",
+  "version": "ir-v0.1",
+  "intent": "!FETCH",
+  "entities": [
+    {"id": "act", "value": "data", "action": "!FETCH"},
+    {"id": "p1", "value": "result", "action": "!PROCESS"},
+    {"id": "p2", "value": "report", "action": "!EMAIL"}
+  ],
+  "constraints": [
+    {"type": "timeout", "value": "30s"}
+  ],
+  "alternatives": [],
+  "meta": {
+    "priority": 2,
+    "confidence": 0.9,
+    "seq": ["fetch_first", "process_second", "email_last"],
+    "out": "natural",
+    "next_agent": null,
+    "req_id": "d8c3",
+    "session_id": null
+  }
+}

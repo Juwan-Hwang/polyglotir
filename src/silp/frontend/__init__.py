@@ -11,17 +11,20 @@ modules can look them up by name.
 
 from .base import Frontend
 from .code import CodeFrontend
+from .json_frontend import JSONFrontend
 from .natural import NaturalFrontend
 from .registry import get_frontend, register_frontend, list_frontends
 
 # ── Register built-in frontends ───────────────────────────────────────
 register_frontend(CodeFrontend)
 register_frontend(NaturalFrontend)
+register_frontend(JSONFrontend)
 
 __all__ = [
     "Frontend",
     "CodeFrontend",
     "NaturalFrontend",
+    "JSONFrontend",
     "get_frontend",
     "register_frontend",
     "list_frontends",

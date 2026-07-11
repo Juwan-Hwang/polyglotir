@@ -1,0 +1,87 @@
+string,tokenizer,token_count,is_single_token,tokens,is_unk
+cancel,gpt-4o,1,True,"[""cancel""]",False
+cancel,gpt-3.5,1,True,"[""cancel""]",False
+start,gpt-4o,1,True,"[""start""]",False
+start,gpt-3.5,1,True,"[""start""]",False
+email,gpt-4o,1,True,"[""email""]",False
+email,gpt-3.5,1,True,"[""email""]",False
+fetch,gpt-4o,1,True,"[""fetch""]",False
+fetch,gpt-3.5,1,True,"[""fetch""]",False
+process,gpt-4o,1,True,"[""process""]",False
+process,gpt-3.5,1,True,"[""process""]",False
+translate,gpt-4o,1,True,"[""translate""]",False
+translate,gpt-3.5,1,True,"[""translate""]",False
+switch_tool,gpt-4o,2,False,"[""switch"", ""_tool""]",False
+switch_tool,gpt-3.5,2,False,"[""switch"", ""_tool""]",False
+book,gpt-4o,1,True,"[""book""]",False
+book,gpt-3.5,1,True,"[""book""]",False
+route,gpt-4o,1,True,"[""route""]",False
+route,gpt-3.5,1,True,"[""route""]",False
+search,gpt-4o,1,True,"[""search""]",False
+search,gpt-3.5,1,True,"[""search""]",False
+update,gpt-4o,1,True,"[""update""]",False
+update,gpt-3.5,1,True,"[""update""]",False
+escalate,gpt-4o,3,False,"[""es"", ""cal"", ""ate""]",False
+escalate,gpt-3.5,2,False,"[""escal"", ""ate""]",False
+suggest,gpt-4o,1,True,"[""suggest""]",False
+suggest,gpt-3.5,1,True,"[""suggest""]",False
+!CANCEL,gpt-4o,3,False,"[""!"", ""C"", ""ANCEL""]",False
+!CANCEL,gpt-3.5,2,False,"[""!"", ""CANCEL""]",False
+!START,gpt-4o,2,False,"[""!"", ""START""]",False
+!START,gpt-3.5,2,False,"[""!"", ""START""]",False
+!EMAIL,gpt-4o,2,False,"[""!"", ""EMAIL""]",False
+!EMAIL,gpt-3.5,2,False,"[""!"", ""EMAIL""]",False
+!FETCH,gpt-4o,2,False,"[""!"", ""FETCH""]",False
+!FETCH,gpt-3.5,2,False,"[""!"", ""FETCH""]",False
+!PROCESS,gpt-4o,2,False,"[""!"", ""PROCESS""]",False
+!PROCESS,gpt-3.5,2,False,"[""!"", ""PROCESS""]",False
+!TRANSLATE,gpt-4o,4,False,"[""!"", ""TRAN"", ""SL"", ""ATE""]",False
+!TRANSLATE,gpt-3.5,4,False,"[""!"", ""TRAN"", ""SL"", ""ATE""]",False
+!SWITCH_TOOL,gpt-4o,4,False,"[""!"", ""SW"", ""ITCH"", ""_TOOL""]",False
+!SWITCH_TOOL,gpt-3.5,4,False,"[""!"", ""SW"", ""ITCH"", ""_TOOL""]",False
+!BOOK,gpt-4o,2,False,"[""!"", ""BOOK""]",False
+!BOOK,gpt-3.5,2,False,"[""!"", ""BOOK""]",False
+!ROUTE,gpt-4o,3,False,"[""!"", ""RO"", ""UTE""]",False
+!ROUTE,gpt-3.5,2,False,"[""!"", ""ROUTE""]",False
+!SEARCH,gpt-4o,2,False,"[""!"", ""SEARCH""]",False
+!SEARCH,gpt-3.5,2,False,"[""!"", ""SEARCH""]",False
+!UPDATE,gpt-4o,2,False,"[""!"", ""UPDATE""]",False
+!UPDATE,gpt-3.5,2,False,"[""!"", ""UPDATE""]",False
+!ESCALATE,gpt-4o,4,False,"[""!"", ""ESC"", ""AL"", ""ATE""]",False
+!ESCALATE,gpt-3.5,4,False,"[""!"", ""ES"", ""CAL"", ""ATE""]",False
+!SUGGEST,gpt-4o,4,False,"[""!"", ""S"", ""UG"", ""GEST""]",False
+!SUGGEST,gpt-3.5,4,False,"[""!"", ""S"", ""UG"", ""GEST""]",False
+if,gpt-4o,1,True,"[""if""]",False
+if,gpt-3.5,1,True,"[""if""]",False
+else,gpt-4o,1,True,"[""else""]",False
+else,gpt-3.5,1,True,"[""else""]",False
+and,gpt-4o,1,True,"[""and""]",False
+and,gpt-3.5,1,True,"[""and""]",False
+not,gpt-4o,1,True,"[""not""]",False
+not,gpt-3.5,1,True,"[""not""]",False
+(,gpt-4o,1,True,"[""(""]",False
+(,gpt-3.5,1,True,"[""(""]",False
+),gpt-4o,1,True,"["")""]",False
+),gpt-3.5,1,True,"["")""]",False
+",",gpt-4o,1,True,"["",""]",False
+",",gpt-3.5,1,True,"["",""]",False
+;,gpt-4o,1,True,"["";""]",False
+;,gpt-3.5,1,True,"["";""]",False
+:,gpt-4o,1,True,"["":""]",False
+:,gpt-3.5,1,True,"["":""]",False
+!,gpt-4o,1,True,"[""!""]",False
+!,gpt-3.5,1,True,"[""!""]",False
+@,gpt-4o,1,True,"[""@""]",False
+@,gpt-3.5,1,True,"[""@""]",False
+->,gpt-4o,1,True,"[""->""]",False
+->,gpt-3.5,1,True,"[""->""]",False
+cancel,gpt-4o,1,True,"[""cancel""]",False
+cancel,gpt-3.5,1,True,"[""cancel""]",False
+notify,gpt-4o,1,True,"[""notify""]",False
+notify,gpt-3.5,1,True,"[""notify""]",False
+start,gpt-4o,1,True,"[""start""]",False
+start,gpt-3.5,1,True,"[""start""]",False
+fetch,gpt-4o,1,True,"[""fetch""]",False
+fetch,gpt-3.5,1,True,"[""fetch""]",False
+switch,gpt-4o,1,True,"[""switch""]",False
+switch,gpt-3.5,1,True,"[""switch""]",False
