@@ -11,7 +11,7 @@
   ],
   "alternatives": [
     {"action": "!ROUTE", "target": "tech_support"},
-    {"action": "!ESCALATE", "target": "manager"}
+    {"action": "!ROUTE", "target": "manager"}
   ],
   "meta": {
     "priority": 1,

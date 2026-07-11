@@ -136,6 +136,7 @@ class TestNewTestCases:
         output = get_frontend("code").compile(ir)
         assert "route(" in output
         assert "else:" in output
+        assert "route(manager)" in output  # was !ESCALATE, now !ROUTE
 
     def test_case9_tool_call_compiles_code(self):
         """Case 9: tool call → search with keyword args."""
@@ -149,6 +150,19 @@ class TestNewTestCases:
         output = get_frontend("code").compile(ir)
         assert "search(" in output
         assert "query=italian" in output
+
+    def test_case5_tool_branch_compiles_code(self):
+        """Case 5: tool branch → switch with weather operator."""
+        from silp.frontend import get_frontend
+        from silp.ir import validate as validate_ir
+
+        data = json.loads(
+            (EXAMPLES_DIR / "case5_tool_branch.json").read_text("utf-8")
+        )
+        ir = validate_ir(data).ir
+        output = get_frontend("code").compile(ir)
+        assert "switch(" in output
+        assert "weather>rain" in output
 
     def test_case10_multi_turn_compiles_code(self):
         """Case 10: multi-turn reference → update with auth constraint."""

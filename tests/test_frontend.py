@@ -110,17 +110,17 @@ class TestCodeFrontendCompile:
         assert "translate(src=fr_rev_bold,tgt=shakespeare_en,style=archaic_heavy)" in output
 
     def test_case5_tool_call_branch(self):
-        """if weather>rain: switch_tool(indoor_activity)"""
+        """if weather>rain: switch(indoor_activity)"""
         ir = _make_ir(
-            intent="!SWITCH_TOOL",
-            entities=[{"id": "act", "value": "indoor_activity", "action": "!SWITCH_TOOL"}],
+            intent="!SWITCH",
+            entities=[{"id": "act", "value": "indoor_activity", "action": "!SWITCH"}],
             constraints=[
                 {"type": "weather", "value": "rain", "operator": ">"},
             ],
         )
         output = self.fe.compile(ir)
         assert "if weather>rain:" in output
-        assert "switch_tool(indoor_activity)" in output
+        assert "switch(indoor_activity)" in output
 
     def test_no_constraints_no_alternatives(self):
         """Bare function call when no conditions or alternatives."""

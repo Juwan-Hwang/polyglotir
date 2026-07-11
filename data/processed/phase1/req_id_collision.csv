@@ -1,0 +1,4 @@
+n,req_id_length,unique_ids,collisions,collision_rate_pct,collision_groups,max_group_size,id_space,birthday_prob_pct,verdict
+1000,4,995,5,0.5,5,2,65536,99.9514,PASS
+1000,6,1000,0,0.0,0,1,16777216,2.9363,PASS
+1000,8,1000,0,0.0,0,1,4294967296,0.0116,PASS

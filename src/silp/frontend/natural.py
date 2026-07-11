@@ -98,12 +98,13 @@ _VERB_PHRASES: dict[str, str] = {
     "FETCH": "fetch",
     "PROCESS": "process",
     "TRANSLATE": "translate",
-    "SWITCH_TOOL": "switch to",
+    "SWITCH": "switch to",
+    "SWITCH_TOOL": "switch to",  # backward compat (Phase 0.5 data)
     "BOOK": "book",
     "ROUTE": "route",
     "SEARCH": "search",
     "UPDATE": "update",
-    "ESCALATE": "escalate",
+    "ESCALATE": "escalate",  # backward compat (Phase 0.5 data)
     "SUGGEST": "suggest",
 }
 

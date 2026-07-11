@@ -1,9 +1,9 @@
 {
   "silp": "v1",
   "version": "ir-v0.1",
-  "intent": "!SWITCH_TOOL",
+  "intent": "!SWITCH",
   "entities": [
-    {"id": "act", "value": "indoor_activity", "action": "!SWITCH_TOOL"}
+    {"id": "act", "value": "indoor_activity", "action": "!SWITCH"}
   ],
   "constraints": [
     {"type": "weather", "value": "rain", "operator": ">"}

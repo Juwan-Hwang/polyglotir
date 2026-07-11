@@ -215,8 +215,9 @@ _VERB_SYNONYMS: dict[str, list[str]] = {
     "book": ["预订", "预约", "订购", "reserve", "schedule"],
     "route": ["路由", "转派", "分配", "direct", "assign", "transfer"],
     "search": ["搜索", "查找", "检索", "find", "lookup", "query"],
-    "switch_tool": ["切换", "转换工具", "切换工具", "switch"],
-    "escalate": ["升级", "上报", "提升", "raise", "promote", "advance"],
+    "switch": ["切换", "转换", "切换工具", "switch_tool"],
+    "switch_tool": ["切换", "转换工具", "切换工具", "switch"],  # backward compat
+    "escalate": ["升级", "上报", "提升", "raise", "promote", "advance"],  # backward compat
     "suggest": ["建议", "推荐", "提议", "recommend", "propose"],
 }
 

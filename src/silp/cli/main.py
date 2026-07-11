@@ -4,7 +4,9 @@ Commands::
 
     silpc validate <ir.json>           Validate an IR JSON file.
     silpc compile <ir.json> [-f code]  Compile IR to a frontend surface string.
+    silpc decode <text> [-f code]      Decode a surface string back to IR.
     silpc frontends                     List available frontends.
+    silpc whitelist                     List verb whitelist (approved/excluded).
     silpc lock <ir.json> [-f code]     Generate a compile.lock entry.
 """
 
@@ -22,6 +24,7 @@ from rich.table import Table
 
 from ..frontend import get_frontend, list_frontends
 from ..ir import validate as validate_ir
+from ..ir.whitelist import list_approved, list_excluded, whitelist_report
 
 console = Console()
 
@@ -49,15 +52,15 @@ def _load_ir(path: str) -> dict:
 def _print_result(result) -> None:
     """Pretty-print a ValidationResult."""
     if result.valid:
-        console.print("[green]✓ Valid[/green]")
+        console.print("[green]OK Valid[/green]")
         for w in result.warnings:
-            console.print(f"  [yellow]⚠ {w}[/yellow]")
+            console.print(f"  [yellow]WARN {w}[/yellow]")
     else:
-        console.print("[red]✗ Invalid[/red]")
+        console.print("[red]FAIL Invalid[/red]")
         for e in result.errors:
-            console.print(f"  [red]• {e}[/red]")
+            console.print(f"  [red]- {e}[/red]")
         for w in result.warnings:
-            console.print(f"  [yellow]⚠ {w}[/yellow]")
+            console.print(f"  [yellow]WARN {w}[/yellow]")
 
 
 # ── CLI group ─────────────────────────────────────────────────────────
@@ -66,7 +69,7 @@ def _print_result(result) -> None:
 @click.group()
 @click.version_option(package_name="silp")
 def cli() -> None:
-    """SILP — Semantic Interlingua Layer Protocol CLI."""
+    """SILP -- Semantic Interlingua Layer Protocol CLI."""
 
 
 @cli.command("validate")
@@ -103,6 +106,33 @@ def compile_cmd(ir_file: str, frontend_name: str) -> None:
 
 
 @cli.command()
+@click.argument("text")
+@click.option("-f", "--frontend", "frontend_name", default="code",
+              help="Frontend name (default: code).")
+def decode(text: str, frontend_name: str) -> None:
+    """Decode a frontend surface string back to IR JSON.
+
+    Phase 1: demonstrates the round-trip MVP.
+    """
+    try:
+        fe = get_frontend(frontend_name)
+    except KeyError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        sys.exit(1)
+
+    try:
+        ir = fe.decode(text)
+    except NotImplementedError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        sys.exit(1)
+    except Exception as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        sys.exit(1)
+
+    console.print_json(ir.to_compact_json())
+
+
+@cli.command()
 def frontends() -> None:
     """List available frontends."""
     table = Table(title="Registered Frontends")
@@ -114,15 +144,41 @@ def frontends() -> None:
     console.print(table)
 
 
+@cli.command()
+def whitelist() -> None:
+    """List the verb whitelist (approved and excluded verbs)."""
+    table = Table(title="SILP Verb Whitelist")
+    table.add_column("Verb", style="cyan")
+    table.add_column("Fn Name", style="green")
+    table.add_column("1-Token", style="yellow")
+    table.add_column("Status", style="magenta")
+    table.add_column("Notes", style="dim")
+
+    for row in whitelist_report():
+        status = row["status"]
+        notes = row.get("exclude_reason", "") or row.get("subword_analysis", "")[:60]
+        table.add_row(
+            f"!{row['verb']}",
+            row["fn_name"],
+            str(row["single_token_all"]),
+            status,
+            notes,
+        )
+
+    console.print(table)
+    console.print(f"\n[green]Approved:[/green] {len(list_approved())} verbs")
+    console.print(f"[red]Excluded:[/red] {len(list_excluded())} verbs")
+
+
 @cli.command("lock")
 @click.argument("ir_file", type=click.Path())
 @click.option("-f", "--frontend", "frontend_name", default="code",
               help="Frontend name (default: code).")
 def lock_cmd(ir_file: str, frontend_name: str) -> None:
-    """Generate a compile.lock entry (IR hash → frontend output).
+    """Generate a compile.lock entry (IR hash -> frontend output).
 
-    Per spec §4 Phase 0.5: ``compile.lock`` is the immutable audit trail.
-    Recompiling requires ``rm .silp/compile.lock`` (git-tracked).
+    Per spec Phase 0.5: compile.lock is the immutable audit trail.
+    Recompiling requires rm .silp/compile.lock (git-tracked).
     """
     data = _load_ir(ir_file)
     result = validate_ir(data)
@@ -153,7 +209,7 @@ def lock_cmd(ir_file: str, frontend_name: str) -> None:
     with open(LOCK_FILE, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
-    console.print(f"[green]✓ Locked[/green] {ir_hash} → {frontend_output}")
+    console.print(f"[green]OK Locked[/green] {ir_hash} -> {frontend_output}")
     console.print(f"  Appended to {LOCK_FILE}")
 
 
