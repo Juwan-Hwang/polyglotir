@@ -247,7 +247,15 @@ class TestModelFactory:
 
         models = list_models()
         assert "smollm-360m" in models
-        assert "gpt-4o-mini" in models
+        assert "deepseek-v3.2" in models
+        assert "glm-5.2" in models
+
+    def test_list_model_names_sorted(self):
+        from silp.bench.models import list_model_names
+
+        names = list_model_names()
+        assert names == sorted(names)
+        assert len(names) >= 10  # at least 11 proxy + 3 local + 3 official
 
     def test_get_local_model(self):
         from silp.bench.models import get_model, LocalHFBackend
@@ -257,12 +265,28 @@ class TestModelFactory:
         assert model.name == "smollm-360m"
         assert model.backend_type == "local"
 
-    def test_get_openai_model(self):
+    def test_get_proxy_model(self):
         from silp.bench.models import get_model, OpenAIBackend
 
-        model = get_model("gpt-4o-mini")
+        model = get_model("deepseek-v3.2")
         assert isinstance(model, OpenAIBackend)
         assert model.backend_type == "api"
+        assert model.model_id == "deepseek-v3.2"
+
+    def test_get_glm_model(self):
+        from silp.bench.models import get_model, OpenAIBackend
+
+        model = get_model("glm-5.2")
+        assert isinstance(model, OpenAIBackend)
+        assert model.model_id == "glm-5.2"
+
+    def test_get_model_family(self):
+        from silp.bench.models import get_model_family
+
+        assert get_model_family("deepseek-v3.2") == "deepseek"
+        assert get_model_family("glm-5.2") == "glm"
+        assert get_model_family("kimi-k2.6") == "kimi"
+        assert get_model_family("smollm-360m") == "smollm"
 
     def test_get_unknown_model(self):
         from silp.bench.models import get_model
@@ -287,7 +311,7 @@ class TestJudgeFactory:
         from silp.bench.judge import get_judge, LLMJudge
 
         # This creates the judge object but doesn't call the API
-        judge = get_judge("llm", "gpt-4o-mini")
+        judge = get_judge("llm", "deepseek-v3.2")
         assert isinstance(judge, LLMJudge)
 
 

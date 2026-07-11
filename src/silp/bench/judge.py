@@ -9,11 +9,15 @@ Design principles (from spec §4 Phase 0):
 - The judge prompt is **fixed** — no per-case tuning.
 - Judge results are recorded for audit.
 
-Two judge modes:
-1. ``llm`` — use an API model (default: gpt-4o-mini) as the judge.
+Three judge modes:
+1. ``llm``  — use an API model as the judge (default: glm-5.2).
 2. ``rule`` — lightweight rule-based heuristic for quick local testing
-   (checks for key entities/actions in the response).  This is NOT a
-   replacement for the LLM judge; it's a fast pre-filter.
+   (checks for key entities/actions in the response, with Chinese synonym
+   support).  This is NOT a replacement for the LLM judge.
+3. ``dual`` — run both rule and LLM judges, record both verdicts.
+   The LLM verdict is primary; the rule verdict is recorded for analysis
+   (e.g., measuring the false-negative rate of rule-based judges in
+   cross-lingual scenarios — itself a finding for the paper).
 """
 
 from __future__ import annotations
@@ -36,7 +40,7 @@ class JudgeResult:
 
     verdict: str  # "pass" or "fail"
     reason: str
-    judge: str  # judge model name
+    judge: str  # judge model name or "rule"
     details: dict[str, object] = field(default_factory=dict)
 
     @property
@@ -44,27 +48,33 @@ class JudgeResult:
         return self.verdict == "pass"
 
 
-# ── Judge prompt ──────────────────────────────────────────────────────
+# ── Judge prompt (bilingual-aware) ────────────────────────────────────
 
-JUDGE_SYSTEM = """You are a strict semantic evaluator. Your job is to determine whether a model's response correctly captures the intent of a given instruction.
+JUDGE_SYSTEM = """You are a strict semantic evaluator for the SILP (Semantic Interlingua Layer Protocol) project.
+
+Your task: determine whether a model's response correctly captures the FULL semantic intent of a SILP instruction. The response may be in English, Chinese, or any other language — judge by SEMANTIC equivalence, not string matching.
 
 You will receive:
-1. The original intent (in JSON IR format)
-2. The encoded instruction shown to the model
-3. The model's response
+1. Original Intent (JSON IR format) — the canonical semantic representation
+2. Encoded Instruction — what was shown to the model
+3. Model Response — the model's interpretation
 
-Evaluate whether the model's response demonstrates correct understanding of ALL of the following (if present in the IR):
-- The main action (e.g., cancel, start, translate)
-- All entities/arguments (e.g., what to cancel, what to translate)
-- All constraints/conditions (e.g., "if not raining", "if budget <= 500")
-- All alternative/else-branch actions
-- The correct ordering if sequence is specified
-- Negation logic (e.g., "if NOT rain" must not be confused with "if rain")
+Evaluation criteria (ALL must be correct for a "pass"):
+- Main action: The response must correctly identify the primary action (e.g., cancel, start, translate, update). Paraphrasing in any language is acceptable.
+- All entities/arguments: Every entity value and its role must be correctly identified. Paraphrasing is acceptable if the semantic meaning is preserved (e.g., "order_42" can be described as "订单42" or "order number 42").
+- All constraints/conditions: Every condition must be correctly captured, including time bounds, subjects, and operators (e.g., <=, !=, >=).
+- Negation logic: Negated conditions (e.g., "if NOT rain") must NOT be reversed. A reversed negation is an automatic fail. This is the most critical check.
+- Alternative/else-branch: All fallback actions must be correctly identified with their targets and locations.
+- Ordering: If meta.seq specifies a sequence, the order must be preserved.
 
-Respond in EXACTLY this JSON format:
-{"verdict": "pass" or "fail", "reason": "one-sentence explanation"}
+A response FAILS if:
+- It misses or misunderstands any entity, constraint, or action
+- It reverses any negation condition (e.g., saying "if rain" when the IR says "if NOT rain")
+- It omits any required action or alternative
+- It fabricates entities or conditions not present in the IR
 
-A response passes if it correctly captures the FULL semantic intent, even if the wording differs. A response fails if it misses any entity, reverses any condition, or omits any required action."""
+Respond in EXACTLY this JSON format (no markdown fences, no extra text):
+{"verdict": "pass" or "fail", "reason": "one-sentence explanation", "missing": ["list of any missing or incorrect elements, empty array if pass"]}"""
 
 JUDGE_PROMPT_TEMPLATE = """## Original Intent (IR)
 {ir_json}
@@ -84,13 +94,13 @@ Evaluate: does the model's response correctly capture the full semantic intent?"
 class LLMJudge:
     """LLM-based semantic judge.
 
-    Uses a separate model (default: gpt-4o-mini) to evaluate whether
+    Uses a separate model (default: glm-5.2) to evaluate whether
     a model response correctly captures the IR's intent.
     """
 
     def __init__(
         self,
-        judge_model_name: str = "gpt-4o-mini",
+        judge_model_name: str = "glm-5.2",
         model: ModelBackend | None = None,
     ) -> None:
         self.judge_model_name = judge_model_name
@@ -112,7 +122,7 @@ class LLMJudge:
         full_prompt = f"{JUDGE_SYSTEM}\n\n{prompt}"
         response = self._model.generate(
             full_prompt,
-            GenerationConfig(max_new_tokens=128, temperature=0.0),
+            GenerationConfig(max_new_tokens=256, temperature=0.0),
         )
 
         if response.error:
@@ -126,56 +136,110 @@ class LLMJudge:
 
 
 def _parse_judge_response(text: str, judge_name: str) -> JudgeResult:
-    """Parse the judge LLM's JSON response."""
-    # Try to extract JSON from the response
-    # The judge might wrap it in ```json ... ``` or add extra text
-    json_match = re.search(r'\{[^{}]*"verdict"[^{}]*\}', text, re.DOTALL)
-    if json_match:
+    """Parse the judge LLM's JSON response.
+
+    Handles:
+    - Plain JSON
+    - JSON wrapped in markdown code fences
+    - JSON with extra text before/after
+    """
+    # Strip markdown code fences if present
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+
+    # Try direct JSON parse
+    try:
+        data = json.loads(cleaned)
+        return _build_judge_result(data, judge_name, text)
+    except json.JSONDecodeError:
+        pass
+
+    # Try to extract JSON object from text
+    json_start = cleaned.find("{")
+    json_end = cleaned.rfind("}")
+    if json_start != -1 and json_end != -1 and json_end > json_start:
+        json_str = cleaned[json_start : json_end + 1]
         try:
-            data = json.loads(json_match.group())
-            verdict = data.get("verdict", "fail").lower().strip()
-            reason = data.get("reason", "no reason provided")
-            if verdict not in ("pass", "fail"):
-                verdict = "fail"
-            return JudgeResult(
-                verdict=verdict,
-                reason=reason,
-                judge=judge_name,
-                details={"raw": text},
-            )
+            data = json.loads(json_str)
+            return _build_judge_result(data, judge_name, text)
         except json.JSONDecodeError:
             pass
 
-    # Fallback: check for "pass" or "fail" in the text
-    text_lower = text.lower()
+    # Fallback: check for "pass" or "fail" in text
+    text_lower = cleaned.lower()
     if '"pass"' in text_lower or "verdict: pass" in text_lower:
         return JudgeResult(
             verdict="pass",
-            reason=text[:200],
+            reason=cleaned[:200],
             judge=judge_name,
+            details={"raw": text},
         )
     return JudgeResult(
         verdict="fail",
-        reason=f"Could not parse judge response: {text[:200]}",
+        reason=f"Could not parse judge response: {cleaned[:200]}",
         judge=judge_name,
+        details={"raw": text},
     )
 
 
-# ── Rule-based judge (fast pre-filter) ────────────────────────────────
+def _build_judge_result(data: dict, judge_name: str, raw: str) -> JudgeResult:
+    """Build a JudgeResult from parsed JSON data."""
+    verdict = str(data.get("verdict", "fail")).lower().strip()
+    if verdict not in ("pass", "fail"):
+        verdict = "fail"
+    reason = str(data.get("reason", "no reason provided"))
+    missing = data.get("missing", [])
+    return JudgeResult(
+        verdict=verdict,
+        reason=reason,
+        judge=judge_name,
+        details={"missing": missing, "raw": raw},
+    )
+
+
+# ── Rule-based judge (fast pre-filter, Chinese-aware) ─────────────────
+
+
+# Verb synonyms: English + Chinese.
+# The rule judge checks if any of these appear in the (lowercased) response.
+_VERB_SYNONYMS: dict[str, list[str]] = {
+    "cancel": ["取消", "撤销", "废除", "cancell", "void", "abort"],
+    "start": ["开始", "启动", "发起", "begin", "launch", "initiate"],
+    "translate": ["翻译", "转换", "转化", "convert", "transform"],
+    "update": ["更新", "修改", "编辑", "change", "modify", "edit"],
+    "email": ["邮件", "通知", "发送", "信件", "notify", "send", "message", "contact"],
+    "fetch": ["获取", "提取", "取得", "get", "retrieve", "obtain"],
+    "process": ["处理", "计算", "分析", "handle", "compute", "analyze"],
+    "book": ["预订", "预约", "订购", "reserve", "schedule"],
+    "route": ["路由", "转派", "分配", "direct", "assign", "transfer"],
+    "search": ["搜索", "查找", "检索", "find", "lookup", "query"],
+    "switch_tool": ["切换", "转换工具", "切换工具", "switch"],
+    "escalate": ["升级", "上报", "提升", "raise", "promote", "advance"],
+    "suggest": ["建议", "推荐", "提议", "recommend", "propose"],
+}
+
+# Negation markers: English + Chinese.
+# Used to check if a negated constraint is correctly expressed in the response.
+_NEGATION_MARKERS = [
+    # English
+    "not", "no ", "without", "isn't", "aren't", "don't", "doesn't",
+    "won't", "can't", "cannot",
+    # Chinese
+    "不", "没", "无", "非", "否", "未",
+]
 
 
 class RuleJudge:
     """Lightweight rule-based judge for quick local testing.
 
     Checks that key entities and actions from the IR appear in the response.
-    This is NOT a substitute for the LLM judge — it's a fast pre-filter
-    that catches obvious failures.
+    Supports both English and Chinese responses via synonym tables.
 
-    Rules:
-    1. Main action verb must appear (e.g., "cancel" for !CANCEL)
-    2. All entity values must appear (or close variants)
-    3. Negation must be preserved (if IR has !rain, response must not
-       imply the opposite)
+    This is NOT a substitute for the LLM judge — it's a fast pre-filter
+    that catches obvious failures. Its false-negative rate in cross-lingual
+    scenarios is itself a measurable metric for the paper.
     """
 
     def judge(
@@ -187,46 +251,68 @@ class RuleJudge:
         response_lower = model_response.lower()
         details: dict[str, object] = {"checks": []}
 
-        # 1. Check main action verb (and all its synonyms)
+        # 1. Check main action verb (English + Chinese synonyms)
         verb = ir.intent[1:].lower()
         candidates = [verb] + _VERB_SYNONYMS.get(verb, [])
-        verb_found = any(c in response_lower for c in candidates)
+        verb_found = any(c.lower() in response_lower for c in candidates)
         details["checks"].append({
             "check": "main_verb",
             "expected": verb,
             "found": verb_found,
         })
 
-        # 2. Check entity values
+        # 2. Check entity values (with normalization)
         missing_entities = []
         for e in ir.entities:
-            # Normalize: lowercase, replace _ with space
-            val = e.value.lower().replace("_", " ")
-            found = val in response_lower or e.value.lower() in response_lower
-            if not found:
-                missing_entities.append(e.value)
+            if _find_value(e.value, response_lower):
+                continue
+            missing_entities.append(e.value)
         details["checks"].append({
             "check": "entities",
             "missing": missing_entities,
         })
 
-        # 3. Check negation
+        # 3. Check constraint values
+        missing_constraints = []
+        for c in ir.constraints:
+            if _find_value(c.value, response_lower):
+                continue
+            missing_constraints.append(c.value)
+        if missing_constraints:
+            details["checks"].append({
+                "check": "constraint_values",
+                "missing": missing_constraints,
+            })
+
+        # 4. Check alternative targets
+        missing_alts = []
+        for alt in ir.alternatives:
+            if alt.target and not _find_value(alt.target, response_lower):
+                missing_alts.append(alt.target)
+        if missing_alts:
+            details["checks"].append({
+                "check": "alternative_targets",
+                "missing": missing_alts,
+            })
+
+        # 5. Check negation
         negation_ok = True
         for c in ir.constraints:
             if c.type.startswith("!"):
                 negated = c.type[1:].lower()
-                # If the response says the negated thing IS happening, that's wrong
-                # e.g., if IR says !rain, response saying "it will rain" is wrong
-                # This is a crude heuristic — the LLM judge handles this properly
-                if f"{negated}" in response_lower and "not" not in response_lower:
-                    negation_ok = False
+                # If the negated word appears, check for negation markers
+                if negated in response_lower:
+                    has_negation = any(m in response_lower for m in _NEGATION_MARKERS)
+                    if not has_negation:
+                        negation_ok = False
         details["checks"].append({
             "check": "negation",
             "ok": negation_ok,
         })
 
         # Aggregate
-        all_ok = verb_found and not missing_entities and negation_ok
+        all_missing = missing_entities + missing_constraints + missing_alts
+        all_ok = verb_found and not all_missing and negation_ok
         if all_ok:
             return JudgeResult(
                 verdict="pass",
@@ -239,6 +325,10 @@ class RuleJudge:
             reasons.append(f"main verb '{verb}' not found")
         if missing_entities:
             reasons.append(f"missing entities: {missing_entities}")
+        if missing_constraints:
+            reasons.append(f"missing constraints: {missing_constraints}")
+        if missing_alts:
+            reasons.append(f"missing alternatives: {missing_alts}")
         if not negation_ok:
             reasons.append("negation may be reversed")
         return JudgeResult(
@@ -249,43 +339,98 @@ class RuleJudge:
         )
 
 
-# ── Synonyms (minimal, for rule judge) ────────────────────────────────
+def _find_value(value: str, response_lower: str) -> bool:
+    """Check if *value* appears in *response_lower*, with normalization.
 
-_VERB_SYNONYMS: dict[str, list[str]] = {
-    "cancel": ["cancell", "void", "abort"],
-    "email": ["notify", "send", "message", "contact"],
-    "start": ["begin", "launch", "initiate"],
-    "fetch": ["get", "retrieve", "obtain"],
-    "process": ["handle", "compute", "analyze"],
-    "translate": ["convert", "transform"],
-    "book": ["reserve", "schedule"],
-    "route": ["direct", "assign", "transfer"],
-    "search": ["find", "lookup", "query"],
-    "update": ["modify", "change", "edit"],
-    "escalate": ["raise", "promote", "advance"],
-    "suggest": ["recommend", "propose"],
-}
+    Handles:
+    - Exact match (lowercase)
+    - Underscore → space (``order_42`` → ``order 42``)
+    - Underscore removed (``order_42`` → ``order42``)
+    """
+    val_lower = value.lower()
+    variants = [
+        val_lower,
+        val_lower.replace("_", " "),
+        val_lower.replace("_", ""),
+    ]
+    return any(v in response_lower for v in variants)
 
 
-def _verb_synonym(verb: str) -> str:
-    """Return the first synonym for *verb*, or the verb itself."""
-    synonyms = _VERB_SYNONYMS.get(verb, [])
-    return synonyms[0] if synonyms else verb
+# ── Dual Judge (rule + LLM) ───────────────────────────────────────────
+
+
+class DualJudge:
+    """Runs both RuleJudge and LLMJudge.
+
+    The LLM verdict is primary (used for pass-rate calculation).
+    The rule verdict is recorded for analysis — e.g., measuring the
+    false-negative rate of rule-based judges in cross-lingual scenarios,
+    which is itself a finding for the paper.
+
+    If the LLM judge errors (e.g., proxy down), falls back to the
+    rule judge verdict with a note.
+    """
+
+    def __init__(
+        self,
+        judge_model_name: str = "glm-5.2",
+        model: ModelBackend | None = None,
+    ) -> None:
+        self._rule = RuleJudge()
+        self._llm = LLMJudge(judge_model_name, model)
+
+    def judge(
+        self,
+        ir: SilpIR,
+        encoded: str,
+        model_response: str,
+    ) -> JudgeResult:
+        rule_result = self._rule.judge(ir, encoded, model_response)
+        llm_result = self._llm.judge(ir, encoded, model_response)
+
+        # If LLM judge errored, fall back to rule judge
+        if "Judge error" in llm_result.reason:
+            return JudgeResult(
+                verdict=rule_result.verdict,
+                reason=f"LLM judge unavailable, rule fallback: {rule_result.reason}",
+                judge="dual_fallback",
+                details={
+                    "rule_verdict": rule_result.verdict,
+                    "rule_reason": rule_result.reason,
+                    "llm_verdict": "error",
+                    "llm_reason": llm_result.reason,
+                },
+            )
+
+        return JudgeResult(
+            verdict=llm_result.verdict,
+            reason=llm_result.reason,
+            judge="dual",
+            details={
+                "rule_verdict": rule_result.verdict,
+                "rule_reason": rule_result.reason,
+                "llm_verdict": llm_result.verdict,
+                "llm_reason": llm_result.reason,
+            },
+        )
 
 
 # ── Convenience ───────────────────────────────────────────────────────
 
 
 def get_judge(
-    mode: str = "rule",
-    judge_model: str = "gpt-4o-mini",
-) -> LLMJudge | RuleJudge:
+    mode: str = "dual",
+    judge_model: str = "glm-5.2",
+) -> LLMJudge | RuleJudge | DualJudge:
     """Get a judge instance.
 
     Args:
-        mode: "rule" for fast rule-based, "llm" for LLM-based.
+        mode: "rule" for fast rule-based, "llm" for LLM-based,
+              "dual" for both (default).
         judge_model: Model name for LLM judge (ignored if mode="rule").
     """
     if mode == "llm":
-        return LLMJudge(judge_model_name=judge_model)
+        return LLMJudge(judge_model)
+    if mode == "dual":
+        return DualJudge(judge_model)
     return RuleJudge()

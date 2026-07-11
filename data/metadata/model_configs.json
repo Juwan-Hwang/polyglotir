@@ -1,0 +1,106 @@
+{
+  "$comment": "SILP model registry — single source of truth for all model backends. Add/remove models here, code picks them up automatically.",
+  "local": {
+    "smollm-360m": {
+      "hf_id": "HuggingFaceTB/SmolLM-360M",
+      "description": "SmolLM 360M (CPU, ~720MB)",
+      "family": "smollm"
+    },
+    "qwen2.5-0.5b": {
+      "hf_id": "Qwen/Qwen2.5-0.5B",
+      "description": "Qwen2.5 0.5B (CPU, ~1GB)",
+      "family": "qwen"
+    },
+    "tinyllama-1.1b": {
+      "hf_id": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+      "description": "TinyLlama 1.1B Chat (CPU, ~2.2GB)",
+      "family": "llama"
+    }
+  },
+  "api": {
+    "deepseek-v3.2": {
+      "provider": "openai",
+      "model_id": "deepseek-v3.2",
+      "description": "DeepSeek V3.2 (via local proxy)",
+      "family": "deepseek"
+    },
+    "kimi-k2.6": {
+      "provider": "openai",
+      "model_id": "kimi-k2.6",
+      "description": "Moonshot Kimi K2.6 (via local proxy)",
+      "family": "kimi"
+    },
+    "kimi-k2.5": {
+      "provider": "openai",
+      "model_id": "kimi-k2.5",
+      "description": "Moonshot Kimi K2.5 (via local proxy)",
+      "family": "kimi"
+    },
+    "glm-5.2": {
+      "provider": "openai",
+      "model_id": "glm-5.2",
+      "description": "Zhipu GLM-5.2 (via local proxy)",
+      "family": "glm"
+    },
+    "glm-5.1": {
+      "provider": "openai",
+      "model_id": "glm-5.1",
+      "description": "Zhipu GLM-5.1 (via local proxy)",
+      "family": "glm"
+    },
+    "glm-5": {
+      "provider": "openai",
+      "model_id": "glm-5",
+      "description": "Zhipu GLM-5 (via local proxy)",
+      "family": "glm"
+    },
+    "glm-5v-turbo": {
+      "provider": "openai",
+      "model_id": "glm-5v-turbo",
+      "description": "Zhipu GLM-5V Turbo (via local proxy)",
+      "family": "glm"
+    },
+    "minimax-m2.7": {
+      "provider": "openai",
+      "model_id": "MiniMax-M2.7",
+      "description": "MiniMax M2.7 (via local proxy)",
+      "family": "minimax"
+    },
+    "minimax-m2.5": {
+      "provider": "openai",
+      "model_id": "MiniMax-M2.5",
+      "description": "MiniMax M2.5 (via local proxy)",
+      "family": "minimax"
+    },
+    "longcat-flash": {
+      "provider": "openai",
+      "model_id": "longcat-flash",
+      "description": "Meituan LongCat Flash (via local proxy)",
+      "family": "longcat"
+    },
+    "longcat-2.0": {
+      "provider": "openai",
+      "model_id": "LongCat-2.0",
+      "description": "Meituan LongCat 2.0 (via local proxy)",
+      "family": "longcat"
+    },
+    "gpt-4o-mini": {
+      "provider": "openai",
+      "model_id": "gpt-4o-mini",
+      "description": "OpenAI GPT-4o-mini (official API)",
+      "family": "gpt"
+    },
+    "claude-3.5-sonnet": {
+      "provider": "anthropic",
+      "model_id": "claude-3-5-sonnet-20241022",
+      "description": "Anthropic Claude 3.5 Sonnet",
+      "family": "claude"
+    },
+    "gemini-pro": {
+      "provider": "google",
+      "model_id": "gemini-pro",
+      "description": "Google Gemini Pro",
+      "family": "gemini"
+    }
+  }
+}

@@ -82,8 +82,8 @@ def load_task_set() -> list[tuple[str, dict]]:
 def run_smoke_test(
     models: list[str],
     frontends: list[str],
-    judge_mode: str = "rule",
-    judge_model: str = "gpt-4o-mini",
+    judge_mode: str = "dual",
+    judge_model: str = "glm-5.2",
     dry_run: bool = False,
 ) -> None:
     """Run the full smoke test matrix.
@@ -136,7 +136,7 @@ def run_smoke_test(
     print(f"  Frontends: {frontends}", file=sys.stderr)
     print(f"  Models:    {models}", file=sys.stderr)
     print(f"  Judge:     {judge_mode}" +
-          (f" ({judge_model})" if judge_mode == "llm" else ""), file=sys.stderr)
+          (f" ({judge_model})" if judge_mode in ("llm", "dual") else ""), file=sys.stderr)
     print(f"  Total:     {total} runs", file=sys.stderr)
     print(f"{'='*60}\n", file=sys.stderr)
 
@@ -224,6 +224,13 @@ def run_smoke_test(
                               f"{judge_result.reason[:60]}",
                               file=sys.stderr)
 
+                    # Extract dual judge details if present
+                    details = judge_result.details
+                    rule_verdict = details.get("rule_verdict") if details else None
+                    rule_reason = details.get("rule_reason") if details else None
+                    llm_verdict = details.get("llm_verdict") if details else None
+                    llm_reason = details.get("llm_reason") if details else None
+
                     result = {
                         "case_id": case_id,
                         "frontend": fe_name,
@@ -233,6 +240,10 @@ def run_smoke_test(
                         "judge_verdict": judge_result.verdict,
                         "judge_reason": judge_result.reason,
                         "judge": judge_result.judge,
+                        "rule_verdict": rule_verdict,
+                        "rule_reason": rule_reason,
+                        "llm_verdict": llm_verdict,
+                        "llm_reason": llm_reason,
                         "elapsed": response.elapsed,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                         "first_pass": judge_result.passed,
@@ -273,41 +284,83 @@ def run_smoke_test(
 
 
 def _write_summary_csv(results: list[dict[str, object]]) -> None:
-    """Write per-(model, frontend) pass rate summary."""
+    """Write per-(model, frontend) pass rate summary.
+
+    Generates three CSVs:
+    1. success_rates.csv  — per (model, frontend) pass rate (LLM verdict primary)
+    2. case_details.csv   — per-case detail with both verdicts
+    3. rule_vs_llm.csv    — rule vs LLM judge comparison (for paper analysis)
+    """
     from collections import defaultdict
 
     # Aggregate: (model, frontend) → [pass/fail, ...]
     matrix: dict[tuple[str, str], list[bool]] = defaultdict(list)
+    rule_matrix: dict[tuple[str, str], list[bool]] = defaultdict(list)
     for r in results:
         key = (r["model"], r["frontend"])
         matrix[key].append(r["first_pass"])
+        rv = r.get("rule_verdict")
+        if rv is not None:
+            rule_matrix[key].append(rv == "pass")
 
-    # Write matrix CSV
+    # 1. Write matrix CSV (LLM verdict primary)
     csv_path = PROCESSED_DIR / "success_rates.csv"
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["model", "frontend", "total", "passed",
-                         "pass_rate", "cases_failed"])
+                         "pass_rate", "cases_failed",
+                         "rule_passed", "rule_pass_rate"])
         for (model, frontend), flags in sorted(matrix.items()):
             total = len(flags)
             passed = sum(flags)
             rate = passed / total * 100 if total else 0
             failed = [str(i+1) for i, ok in enumerate(flags) if not ok]
+            rflags = rule_matrix.get((model, frontend), [])
+            rpassed = sum(rflags) if rflags else 0
+            rrate = rpassed / len(rflags) * 100 if rflags else 0
             writer.writerow([model, frontend, total, passed,
-                            f"{rate:.1f}%", ";".join(failed)])
+                            f"{rate:.1f}%", ";".join(failed),
+                            rpassed, f"{rrate:.1f}%"])
 
-    # Write per-case detail
+    # 2. Write per-case detail (both verdicts)
     detail_path = PROCESSED_DIR / "case_details.csv"
     with open(detail_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["case_id", "frontend", "model", "verdict",
-                         "elapsed", "reason"])
+        writer.writerow(["case_id", "frontend", "model",
+                         "llm_verdict", "rule_verdict",
+                         "elapsed", "llm_reason", "rule_reason"])
         for r in results:
             writer.writerow([
                 r["case_id"], r["frontend"], r["model"],
-                r["judge_verdict"], f"{r['elapsed']:.2f}",
-                r["judge_reason"][:100],
+                r.get("llm_verdict") or r["judge_verdict"],
+                r.get("rule_verdict") or "",
+                f"{r['elapsed']:.2f}",
+                (r.get("llm_reason") or r["judge_reason"])[:120],
+                (r.get("rule_reason") or "")[:120],
             ])
+
+    # 3. Write rule vs LLM comparison (for paper: rule judge false-negative analysis)
+    comparison_path = PROCESSED_DIR / "rule_vs_llm.csv"
+    with open(comparison_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["model", "frontend", "total",
+                         "both_pass", "rule_only_pass", "llm_only_pass",
+                         "both_fail", "rule_false_neg_rate",
+                         "rule_false_pos_rate"])
+        for (model, frontend), llm_flags in sorted(matrix.items()):
+            rflags = rule_matrix.get((model, frontend), [])
+            if not rflags or len(rflags) != len(llm_flags):
+                continue
+            total = len(llm_flags)
+            both_pass = sum(1 for l, r in zip(llm_flags, rflags) if l and r)
+            rule_only = sum(1 for l, r in zip(llm_flags, rflags) if not l and r)
+            llm_only = sum(1 for l, r in zip(llm_flags, rflags) if l and not r)
+            both_fail = sum(1 for l, r in zip(llm_flags, rflags) if not l and not r)
+            fn_rate = llm_only / total * 100 if total else 0
+            fp_rate = rule_only / total * 100 if total else 0
+            writer.writerow([model, frontend, total,
+                            both_pass, rule_only, llm_only,
+                            both_fail, f"{fn_rate:.1f}%", f"{fp_rate:.1f}%"])
 
 
 # ── CLI ───────────────────────────────────────────────────────────────
@@ -321,9 +374,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--models", nargs="*", default=None,
-        help="Model names to test (default: all local models). "
-             "Available: smollm-360m, qwen2.5-0.5b, tinyllama-1.1b, "
-             "gpt-4o-mini, claude-3.5-sonnet, gemini-pro",
+        help="Model names to test (default: proxy models via local API). "
+             "Run 'python -c \"from silp.bench.models import list_model_names; print(list_model_names())\"' "
+             "to see all available.",
     )
     parser.add_argument(
         "--frontends", nargs="*", default=None,
@@ -331,12 +384,13 @@ def main() -> None:
              "Available: code, natural, json",
     )
     parser.add_argument(
-        "--judge", choices=["rule", "llm"], default="rule",
-        help="Judge mode: rule (fast, local) or llm (accurate, needs API)",
+        "--judge", choices=["rule", "llm", "dual"], default="dual",
+        help="Judge mode: rule (fast, local), llm (accurate, needs API), "
+             "or dual (both, for cross-validation). Default: dual",
     )
     parser.add_argument(
-        "--judge-model", default="gpt-4o-mini",
-        help="Judge LLM model name (for --judge llm)",
+        "--judge-model", default="glm-5.2",
+        help="Judge LLM model name (for --judge llm or dual). Default: glm-5.2",
     )
     parser.add_argument(
         "--dry-run", action="store_true",
@@ -344,10 +398,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Defaults
+    # Defaults: use proxy models (no download needed)
     if args.models is None:
-        # Default: local models only (safe, no API needed)
-        args.models = ["smollm-360m", "qwen2.5-0.5b", "tinyllama-1.1b"]
+        args.models = ["deepseek-v3.2", "kimi-k2.6", "glm-5.2"]
 
     if args.frontends is None:
         from silp.frontend import list_frontends
