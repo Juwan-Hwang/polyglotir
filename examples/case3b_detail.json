@@ -1,0 +1,1 @@
+{"silp":"v1","version":"ir-v0.1","intent":"!TRANSLATE","entities":[{"id":"src","value":"en_formal"},{"id":"tgt","value":"ja_polite"},{"id":"style","value":"business_heavy"}],"constraints":[],"alternatives":[],"meta":{"priority":1,"confidence":0.85,"seq":[],"out":"natural","next_agent":null,"req_id":"c2e5","session_id":null}}

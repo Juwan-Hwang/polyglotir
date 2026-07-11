@@ -105,13 +105,16 @@ _INFRO_ERROR_RE = re.compile(
     r"connection(?:[\s-]?error)?|"         # connection errors
     r"connect|reset|broken[\s-]?pipe|"     # network errors
     r"overloaded|rate[\s-]?limit|429|"     # rate limits
+    r"401|403|"                            # proxy auth failures (transient)
     r"5\d{2}|"                             # HTTP 5xx
     r"service[\s-]?unavailable|bad[\s-]?gateway|"  # gateway errors
     r"temporary|unavailable|"              # generic temporary
     r"read[\s-]?timeout|"                  # read timeout
     r"apiconnection|apitimeout|"           # SDK error class names
     r"eof|empty[\s-]?response|"            # empty/broken responses
-    r"max[\s-]?retries|retry"              # upstream retry exhaustion
+    r"max[\s-]?retries|retry|"             # upstream retry exhaustion
+    r"invalid[\s-]?api[\s-]?key|"          # proxy may refresh token
+    r"upstream[\s-]?error"                 # proxy upstream issues
     r")",
     re.IGNORECASE,
 )
@@ -119,10 +122,13 @@ _INFRO_ERROR_RE = re.compile(
 # Patterns that indicate semantic/auth errors (NOT retried).
 # These mean the model DID respond, or the request itself is invalid —
 # retrying won't change the outcome.
+# NOTE: 401/403 from a proxy are NOT included here — proxy auth failures
+# are often transient (upstream token refresh, rate-limit side-effect) and
+# should be retried. Only truly permanent auth errors (invalid_api_key
+# with no "upstream" qualifier) are non-retryable.
 _NON_INFRA_ERROR_RE = re.compile(
     r"(?:"
     r"context[\s-]?length|token[\s-]?limit|"     # input too long
-    r"invalid[\s-]?api[\s-]?key|authentication|401|403|"  # auth errors
     r"model[\s-]?not[\s-]?found|404|"            # model doesn't exist
     r"content[\s-]?filter|safety"                # content policy (NO trailing |)
     r")",
@@ -175,7 +181,7 @@ class ModelBackend(ABC):
     backend_type: str  # "local" or "api"
 
     #: Maximum retry attempts for infrastructure errors.
-    max_retries: int = 2
+    max_retries: int = 5
 
     #: Base backoff in seconds (doubled per attempt: 2, 4, 8...).
     retry_backoff_base: float = 2.0

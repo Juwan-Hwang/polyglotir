@@ -1,0 +1,1 @@
+{"silp":"v1","version":"ir-v0.1","intent":"!SWITCH","entities":[{"id":"act","value":"backup_mode","action":"!SWITCH"}],"constraints":[{"type":"disk","value":"90%","operator":">"}],"alternatives":[],"meta":{"priority":1,"confidence":0.9,"seq":[],"out":"natural","next_agent":null,"req_id":"e6f9","session_id":null}}

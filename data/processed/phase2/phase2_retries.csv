@@ -1,6 +1,13 @@
 case_id,frontend,model,retries,verdict,elapsed,reason
-case5_tool_branch,json,deepseek-v3.2,1,pass,10.85,"The model correctly identified the main action as switching to indoor activity, accurately captured the constraint condi"
-case1_multi_constraint,json,kimi-k2.6,1,pass,7.07,模型正确识别了所有核心意图、实体、约束条件和通知目标，语义完全匹配。
-case10_multi_turn,json,minimax-m2.7,2,fail,0.00,Model error: timed out
-case7_parallel_action,json,minimax-m2.7,2,pass,13.39,模型正确识别了核心意图!FETCH、实体data、动作处理流程和超时约束条件。
-case7_parallel_action,llmlingua2,minimax-m2.7,1,fail,15.96,模型错误地将'fetch data'理解为发生超时的失败触发事件，而非意图执行的主要动作，且未识别出'EMAIL'作为具体动作类型。
+case10_multi_turn,code,deepseek-v3.2,4,pass,9.15,"The model correctly identifies all actions, entities, constraints, and negation logic, preserving the full semantic inte"
+case6b_nested_constraint,nl_json,glm-5.2,1,pass,12.13,模型正确识别了预订航班的主要动作，准确提取了所有实体（北京、t+5、3），正确捕捉了价格≤800、航司评分≥4.5和直飞这三个约束条件，且未误读否定逻辑或遗漏关键信息。
+case7c_parallel_action,json,glm-5.2,1,pass,25.88,"The response accurately identifies the main action as fetching logs, correctly captures the subsequent processing action"
+case9b_tool_call,code,glm-5.2,5,pass,6.60,"The response correctly identifies the main action as searching for hotels with the specified parameters (japanese, Tokyo"
+case3_detail,llmlingua2,kimi-k2.6,1,pass,9.64,The model correctly identifies the main action as a text style transformation/translation and accurately captures all re
+case8c_conditional_branch,code,kimi-k2.6,8,pass,10.95,"The model correctly identifies the main action (route), all constraints (severity==critical, category==security), entiti"
+case3c_detail,json,longcat-2.0,1,pass,15.06,"Model response correctly identifies all entities, constraints, and the main translation action with correct semantic map"
+case9_tool_call,code,longcat-2.0,4,pass,9.94,"The model's response correctly identifies the main search action with all specified entities (restaurants, italian, Beij"
+case2_negation,code,minimax-m2.7,1,pass,8.90,模型正确识别了所有核心语义元素：条件判断 (!rain)、主动作、备选动作及其位置约束，且未出现否定逻辑反转。
+case3b_detail,natural,minimax-m2.7,4,fail,9.33,模型错误地理解了实体角色，将 'en_formal' 和 'ja_polite' 识别为并列的目标语言变体，而 IR 中明确定义 'en_formal' 为源语言，'ja_polite' 为目标语言。
+case6_nested_constraint,nl_json,minimax-m2.7,1,pass,27.81,"The model correctly identifies all entities, actions, and constraints including the budget and rating operators, preserv"
+case6c_nested_constraint,code,minimax-m2.7,2,pass,15.69,模型正确识别了所有实体（公寓、广州、入住时间、时长）、约束条件（租金、面积、地铁位置）及主要搜索动作，并保持了否定/约束逻辑的正确性。

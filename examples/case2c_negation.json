@@ -1,0 +1,1 @@
+{"silp":"v1","version":"ir-v0.1","intent":"!START","entities":[{"id":"act","value":"deploy","action":"!START"}],"constraints":[{"type":"!error","value":"true","time":"t+1"}],"alternatives":[{"action":"!START","target":"rollback","location":"staging"}],"meta":{"priority":1,"confidence":0.9,"seq":[],"out":"natural","next_agent":null,"req_id":"b9f4","session_id":null}}

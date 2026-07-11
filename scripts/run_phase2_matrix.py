@@ -37,6 +37,7 @@ from __future__ import annotations
 import csv
 import json
 import sys
+import time
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -183,24 +184,57 @@ def run_matrix(
                 run_id = f"{case_id}|{fe_name}|{model_name}"
                 print(f"  [{len(all_results)+1}/{total}] {run_id}", end="", file=sys.stderr, flush=True)
 
-                response = model.generate(
-                    prompt,
-                    GenerationConfig(max_new_tokens=256, temperature=0.0, timeout=30.0),
-                )
+                # ── Outer retry loop: keep retrying on infra errors ──
+                # The model backend already retries internally (max_retries=5),
+                # but if it STILL fails, we retry the whole call again.
+                # This ensures no error results are ever recorded — the run
+                # only proceeds once the model produces a real response.
+                outer_retries = 0
+                response = None
+                while True:
+                    response = model.generate(
+                        prompt,
+                        GenerationConfig(max_new_tokens=256, temperature=0.0, timeout=30.0),
+                    )
+                    if response.retries:
+                        retry_total += response.retries
 
-                if response.retries:
-                    retry_total += response.retries
+                    if response.error:
+                        outer_retries += 1
+                        print(
+                            f" -> ERROR (outer retry #{outer_retries}): "
+                            f"{response.error[:60]}",
+                            file=sys.stderr,
+                        )
+                        if outer_retries < 10:
+                            backoff = min(30, 5 * outer_retries)
+                            time.sleep(backoff)
+                            print(f"  retrying {run_id}...", end="", file=sys.stderr, flush=True)
+                            continue
+                        # Last resort: after 10 outer retries, force one more
+                        # with a longer timeout
+                        print(f"  final attempt with extended timeout...", end="", file=sys.stderr, flush=True)
+                        response = model.generate(
+                            prompt,
+                            GenerationConfig(max_new_tokens=256, temperature=0.0, timeout=60.0),
+                        )
+                        if response.retries:
+                            retry_total += response.retries
+                        if response.error:
+                            # This should essentially never happen. If it does,
+                            # record it as a last resort but flag it loudly.
+                            print(f" -> UNRECOVERABLE ERROR after {outer_retries} retries", file=sys.stderr)
+                        break
+                    break
 
                 if response.error:
-                    retry_note = f" (retried {response.retries}x)" if response.retries else ""
-                    print(f" -> ERROR{retry_note}: {response.error[:60]}", file=sys.stderr)
                     result = {
                         "case_id": case_id, "frontend": fe_name, "model": model_name,
                         "encoded": encoded, "model_response": "",
                         "judge_verdict": "fail",
-                        "judge_reason": f"Model error: {response.error}",
-                        "judge": "error",
-                        "elapsed": response.elapsed, "retries": response.retries,
+                        "judge_reason": f"Model error (after {outer_retries} outer retries): {response.error}",
+                        "judge": "unrecoverable_error",
+                        "elapsed": response.elapsed, "retries": response.retries + outer_retries,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                         "first_pass": False,
                     }
@@ -226,7 +260,7 @@ def run_matrix(
                         "judge": judge_result.judge,
                         "rule_verdict": rule_verdict, "rule_reason": rule_reason,
                         "llm_verdict": llm_verdict, "llm_reason": llm_reason,
-                        "elapsed": response.elapsed, "retries": response.retries,
+                        "elapsed": response.elapsed, "retries": response.retries + outer_retries,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                         "first_pass": judge_result.passed,
                     }

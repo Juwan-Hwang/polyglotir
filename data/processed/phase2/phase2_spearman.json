@@ -3,207 +3,207 @@
     {
       "model_a": "deepseek-v3.2",
       "model_b": "glm-5.2",
-      "spearman_rho": 0.5183,
-      "n_data_points": 45,
+      "spearman_rho": 0.621,
+      "n_data_points": 135,
       "rates_a": {
         "code": 0.7778,
-        "json": 0.5556,
-        "llmlingua2": 0.2222,
-        "natural": 0.8889,
-        "nl_json": 0.4444
+        "json": 0.7037,
+        "llmlingua2": 0.2593,
+        "natural": 0.7407,
+        "nl_json": 0.6296
       },
       "rates_b": {
-        "code": 0.8889,
-        "json": 0.8889,
-        "llmlingua2": 0.2222,
-        "natural": 0.6667,
-        "nl_json": 0.7778
+        "code": 1.0,
+        "json": 0.9259,
+        "llmlingua2": 0.1481,
+        "natural": 0.963,
+        "nl_json": 0.6667
       }
     },
     {
       "model_a": "deepseek-v3.2",
       "model_b": "kimi-k2.6",
-      "spearman_rho": 0.585,
-      "n_data_points": 45,
+      "spearman_rho": 0.4655,
+      "n_data_points": 135,
       "rates_a": {
         "code": 0.7778,
-        "json": 0.5556,
-        "llmlingua2": 0.2222,
-        "natural": 0.8889,
-        "nl_json": 0.4444
+        "json": 0.7037,
+        "llmlingua2": 0.2593,
+        "natural": 0.7407,
+        "nl_json": 0.6296
       },
       "rates_b": {
-        "code": 0.8889,
-        "json": 0.7778,
-        "llmlingua2": 0.1111,
-        "natural": 0.8889,
-        "nl_json": 0.7778
+        "code": 0.8148,
+        "json": 0.8519,
+        "llmlingua2": 0.4074,
+        "natural": 0.8148,
+        "nl_json": 0.6296
       }
     },
     {
       "model_a": "deepseek-v3.2",
       "model_b": "longcat-2.0",
-      "spearman_rho": 0.4783,
-      "n_data_points": 45,
+      "spearman_rho": 0.6252,
+      "n_data_points": 135,
       "rates_a": {
         "code": 0.7778,
-        "json": 0.5556,
-        "llmlingua2": 0.2222,
-        "natural": 0.8889,
-        "nl_json": 0.4444
+        "json": 0.7037,
+        "llmlingua2": 0.2593,
+        "natural": 0.7407,
+        "nl_json": 0.6296
       },
       "rates_b": {
-        "code": 0.7778,
-        "json": 1.0,
-        "llmlingua2": 0.0,
-        "natural": 0.8889,
-        "nl_json": 0.6667
+        "code": 0.8148,
+        "json": 0.8519,
+        "llmlingua2": 0.1481,
+        "natural": 0.8148,
+        "nl_json": 0.7037
       }
     },
     {
       "model_a": "deepseek-v3.2",
       "model_b": "minimax-m2.7",
-      "spearman_rho": 0.3671,
-      "n_data_points": 45,
+      "spearman_rho": 0.5629,
+      "n_data_points": 135,
       "rates_a": {
         "code": 0.7778,
-        "json": 0.5556,
-        "llmlingua2": 0.2222,
-        "natural": 0.8889,
-        "nl_json": 0.4444
+        "json": 0.7037,
+        "llmlingua2": 0.2593,
+        "natural": 0.7407,
+        "nl_json": 0.6296
       },
       "rates_b": {
-        "code": 0.7778,
-        "json": 0.6667,
-        "llmlingua2": 0.1111,
-        "natural": 0.6667,
-        "nl_json": 0.5556
+        "code": 0.8889,
+        "json": 0.8889,
+        "llmlingua2": 0.3333,
+        "natural": 0.8148,
+        "nl_json": 0.7407
       }
     },
     {
       "model_a": "glm-5.2",
       "model_b": "kimi-k2.6",
-      "spearman_rho": 0.5331,
-      "n_data_points": 45,
+      "spearman_rho": 0.6131,
+      "n_data_points": 135,
       "rates_a": {
-        "code": 0.8889,
-        "json": 0.8889,
-        "llmlingua2": 0.2222,
-        "natural": 0.6667,
-        "nl_json": 0.7778
+        "code": 1.0,
+        "json": 0.9259,
+        "llmlingua2": 0.1481,
+        "natural": 0.963,
+        "nl_json": 0.6667
       },
       "rates_b": {
-        "code": 0.8889,
-        "json": 0.7778,
-        "llmlingua2": 0.1111,
-        "natural": 0.8889,
-        "nl_json": 0.7778
+        "code": 0.8148,
+        "json": 0.8519,
+        "llmlingua2": 0.4074,
+        "natural": 0.8148,
+        "nl_json": 0.6296
       }
     },
     {
       "model_a": "glm-5.2",
       "model_b": "longcat-2.0",
-      "spearman_rho": 0.6339,
-      "n_data_points": 45,
+      "spearman_rho": 0.7193,
+      "n_data_points": 135,
       "rates_a": {
-        "code": 0.8889,
-        "json": 0.8889,
-        "llmlingua2": 0.2222,
-        "natural": 0.6667,
-        "nl_json": 0.7778
+        "code": 1.0,
+        "json": 0.9259,
+        "llmlingua2": 0.1481,
+        "natural": 0.963,
+        "nl_json": 0.6667
       },
       "rates_b": {
-        "code": 0.7778,
-        "json": 1.0,
-        "llmlingua2": 0.0,
-        "natural": 0.8889,
-        "nl_json": 0.6667
+        "code": 0.8148,
+        "json": 0.8519,
+        "llmlingua2": 0.1481,
+        "natural": 0.8148,
+        "nl_json": 0.7037
       }
     },
     {
       "model_a": "glm-5.2",
       "model_b": "minimax-m2.7",
-      "spearman_rho": 0.6265,
-      "n_data_points": 45,
+      "spearman_rho": 0.6778,
+      "n_data_points": 135,
       "rates_a": {
-        "code": 0.8889,
-        "json": 0.8889,
-        "llmlingua2": 0.2222,
-        "natural": 0.6667,
-        "nl_json": 0.7778
+        "code": 1.0,
+        "json": 0.9259,
+        "llmlingua2": 0.1481,
+        "natural": 0.963,
+        "nl_json": 0.6667
       },
       "rates_b": {
-        "code": 0.7778,
-        "json": 0.6667,
-        "llmlingua2": 0.1111,
-        "natural": 0.6667,
-        "nl_json": 0.5556
+        "code": 0.8889,
+        "json": 0.8889,
+        "llmlingua2": 0.3333,
+        "natural": 0.8148,
+        "nl_json": 0.7407
       }
     },
     {
       "model_a": "kimi-k2.6",
       "model_b": "longcat-2.0",
-      "spearman_rho": 0.7006,
-      "n_data_points": 45,
+      "spearman_rho": 0.5687,
+      "n_data_points": 135,
       "rates_a": {
-        "code": 0.8889,
-        "json": 0.7778,
-        "llmlingua2": 0.1111,
-        "natural": 0.8889,
-        "nl_json": 0.7778
+        "code": 0.8148,
+        "json": 0.8519,
+        "llmlingua2": 0.4074,
+        "natural": 0.8148,
+        "nl_json": 0.6296
       },
       "rates_b": {
-        "code": 0.7778,
-        "json": 1.0,
-        "llmlingua2": 0.0,
-        "natural": 0.8889,
-        "nl_json": 0.6667
+        "code": 0.8148,
+        "json": 0.8519,
+        "llmlingua2": 0.1481,
+        "natural": 0.8148,
+        "nl_json": 0.7037
       }
     },
     {
       "model_a": "kimi-k2.6",
       "model_b": "minimax-m2.7",
-      "spearman_rho": 0.6265,
-      "n_data_points": 45,
+      "spearman_rho": 0.6013,
+      "n_data_points": 135,
       "rates_a": {
-        "code": 0.8889,
-        "json": 0.7778,
-        "llmlingua2": 0.1111,
-        "natural": 0.8889,
-        "nl_json": 0.7778
+        "code": 0.8148,
+        "json": 0.8519,
+        "llmlingua2": 0.4074,
+        "natural": 0.8148,
+        "nl_json": 0.6296
       },
       "rates_b": {
-        "code": 0.7778,
-        "json": 0.6667,
-        "llmlingua2": 0.1111,
-        "natural": 0.6667,
-        "nl_json": 0.5556
+        "code": 0.8889,
+        "json": 0.8889,
+        "llmlingua2": 0.3333,
+        "natural": 0.8148,
+        "nl_json": 0.7407
       }
     },
     {
       "model_a": "longcat-2.0",
       "model_b": "minimax-m2.7",
-      "spearman_rho": 0.7184,
-      "n_data_points": 45,
+      "spearman_rho": 0.6844,
+      "n_data_points": 135,
       "rates_a": {
-        "code": 0.7778,
-        "json": 1.0,
-        "llmlingua2": 0.0,
-        "natural": 0.8889,
-        "nl_json": 0.6667
+        "code": 0.8148,
+        "json": 0.8519,
+        "llmlingua2": 0.1481,
+        "natural": 0.8148,
+        "nl_json": 0.7037
       },
       "rates_b": {
-        "code": 0.7778,
-        "json": 0.6667,
-        "llmlingua2": 0.1111,
-        "natural": 0.6667,
-        "nl_json": 0.5556
+        "code": 0.8889,
+        "json": 0.8889,
+        "llmlingua2": 0.3333,
+        "natural": 0.8148,
+        "nl_json": 0.7407
       }
     }
   ],
-  "n_data_points": 45,
+  "n_data_points": 135,
   "n_models": 5,
   "n_frontends": 5,
   "valid": true,
-  "note": "Spearman valid (45 points, threshold=30)"
+  "note": "Spearman valid (135 points, threshold=30)"
 }

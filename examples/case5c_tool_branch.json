@@ -1,0 +1,1 @@
+{"silp":"v1","version":"ir-v0.1","intent":"!SWITCH","entities":[{"id":"act","value":"safe_mode","action":"!SWITCH"}],"constraints":[{"type":"error_rate","value":"5%","operator":">"}],"alternatives":[],"meta":{"priority":1,"confidence":0.9,"seq":[],"out":"natural","next_agent":null,"req_id":"e7e0","session_id":null}}
