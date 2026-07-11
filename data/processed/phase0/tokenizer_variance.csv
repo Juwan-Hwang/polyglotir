@@ -1,7 +1,7 @@
 key,min,max,mean,stdev,range
 case10_multi_turn|code,30,30,30,0.0,0
 case10_multi_turn|json,54,55,54.5,0.71,1
-case10_multi_turn|natural,24,24,24,0.0,0
+case10_multi_turn|natural,25,25,25,0.0,0
 case1_multi_constraint|code,20,21,20.5,0.71,1
 case1_multi_constraint|json,40,43,41.5,2.12,3
 case1_multi_constraint|natural,18,18,18,0.0,0
@@ -13,10 +13,10 @@ case3_detail|json,27,29,28,1.41,2
 case3_detail|natural,14,15,14.5,0.71,1
 case5_tool_branch|code,11,11,11,0.0,0
 case5_tool_branch|json,29,30,29.5,0.71,1
-case5_tool_branch|natural,10,10,10,0.0,0
+case5_tool_branch|natural,12,12,12,0.0,0
 case6_nested_constraint|code,36,36,36,0.0,0
 case6_nested_constraint|json,71,71,71,0.0,0
-case6_nested_constraint|natural,29,29,29,0.0,0
+case6_nested_constraint|natural,33,33,33,0.0,0
 case7_parallel_action|code,15,15,15,0.0,0
 case7_parallel_action|json,32,35,33.5,2.12,3
 case7_parallel_action|natural,16,16,16,0.0,0
@@ -25,4 +25,4 @@ case8_conditional_branch|json,59,63,61,2.83,4
 case8_conditional_branch|natural,19,19,19,0.0,0
 case9_tool_call|code,32,32,32,0.0,0
 case9_tool_call|json,59,61,60,1.41,2
-case9_tool_call|natural,22,22,22,0.0,0
+case9_tool_call|natural,24,24,24,0.0,0

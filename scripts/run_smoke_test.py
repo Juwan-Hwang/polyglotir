@@ -102,7 +102,7 @@ def run_smoke_test(
         load_env,
     )
     from silp.bench.judge import get_judge
-    from silp.frontend import get_frontend as get_fe, list_frontends
+    from silp.frontend import CompileLock, get_frontend as get_fe, list_frontends
     from silp.ir import validate as validate_ir
 
     load_env()
@@ -159,11 +159,20 @@ def run_smoke_test(
     judge = get_judge(judge_mode, judge_model)
 
     # Pre-compile all IRs (each IR compiled ONCE per frontend)
-    compiled: dict[tuple[str, str], str] = {}  # (case_id, frontend) → encoded
-    for case_id, ir in cases:
-        for fe_name in frontends:
-            fe = get_fe(fe_name)
-            compiled[(case_id, fe_name)] = fe.compile(ir)
+    compiled: dict[tuple[str, str], str] = {}  # (case_id, frontend) -> encoded
+    lock_path = RAW_DIR / "compile.lock.jsonl"
+    with open(lock_path, "w", encoding="utf-8") as lock_file:
+        for case_id, ir in cases:
+            for fe_name in frontends:
+                fe = get_fe(fe_name)
+                encoded = fe.compile(ir)
+                compiled[(case_id, fe_name)] = encoded
+                # Seal and log compile lock for audit
+                lock = CompileLock.seal(
+                    frontend_name=fe_name, ir=ir, compiled=encoded
+                )
+                lock_file.write(lock.to_json() + "\n")
+    print(f"  Compile locks: {lock_path}", file=sys.stderr)
 
     # Run the matrix
     all_results: list[dict[str, object]] = []

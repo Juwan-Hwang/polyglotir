@@ -12,6 +12,7 @@ modules can look them up by name.
 from .base import Frontend
 from .code import CodeFrontend
 from .json_frontend import JSONFrontend
+from .lock import CompileLock
 from .natural import NaturalFrontend
 from .registry import get_frontend, register_frontend, list_frontends
 
@@ -25,6 +26,7 @@ __all__ = [
     "CodeFrontend",
     "NaturalFrontend",
     "JSONFrontend",
+    "CompileLock",
     "get_frontend",
     "register_frontend",
     "list_frontends",
