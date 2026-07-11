@@ -1,0 +1,11 @@
+frontend_a,frontend_b,rate_a,rate_b,b,c,chi2,p_value,significant
+code,json,85.9%,84.4%,16,14,0.0333,0.855132,no
+code,natural,85.9%,83.0%,18,14,0.2812,0.595883,no
+code,nl_json,85.9%,67.4%,38,13,11.2941,0.000778,yes
+code,llmlingua2,85.9%,25.9%,88,7,67.3684,0.000000,yes
+json,natural,84.4%,83.0%,17,15,0.0312,0.859684,no
+json,nl_json,84.4%,67.4%,35,12,10.2979,0.001332,yes
+json,llmlingua2,84.4%,25.9%,85,6,66.8571,0.000000,yes
+natural,nl_json,83.0%,67.4%,34,13,8.5106,0.003531,yes
+natural,llmlingua2,83.0%,25.9%,85,8,62.1075,0.000000,yes
+nl_json,llmlingua2,67.4%,25.9%,67,11,38.7821,0.000000,yes
