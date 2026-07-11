@@ -12,20 +12,26 @@ modules can look them up by name.
 from .base import Frontend
 from .code import CodeFrontend
 from .json_frontend import JSONFrontend
+from .llmlingua import LLMLingua2Frontend
 from .lock import CompileLock
 from .natural import NaturalFrontend
+from .nl_json import NLInJSONFrontend
 from .registry import get_frontend, register_frontend, list_frontends
 
 # ── Register built-in frontends ───────────────────────────────────────
 register_frontend(CodeFrontend)
 register_frontend(NaturalFrontend)
 register_frontend(JSONFrontend)
+register_frontend(NLInJSONFrontend)
+register_frontend(LLMLingua2Frontend)
 
 __all__ = [
     "Frontend",
     "CodeFrontend",
     "NaturalFrontend",
     "JSONFrontend",
+    "NLInJSONFrontend",
+    "LLMLingua2Frontend",
     "CompileLock",
     "get_frontend",
     "register_frontend",

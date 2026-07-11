@@ -19,13 +19,21 @@ Three backend types:
 
 The OpenAI backend reads ``OPENAI_BASE_URL`` from the environment, so it
 works with any OpenAI-compatible proxy (e.g. ``http://localhost:8787/v1``).
+
+**Retry policy**: :meth:`ModelBackend.generate` wraps every backend's
+:meth:`_generate_once` with an infra-error-only retry loop. Only
+infrastructure failures (timeout, network, 5xx, rate-limit) are retried.
+Semantic failures (model answered but the answer is wrong) are never
+retried — this is critical for paper integrity.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import re
 import sys
+import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
@@ -84,24 +92,143 @@ class ModelResponse:
     raw: object = None  # provider-specific raw response
     elapsed: float = 0.0
     error: Optional[str] = None
+    retries: int = 0  # number of infra-error retries (0 = succeeded first try)
+
+
+# ── Infra-error classification ────────────────────────────────────────
+
+# Patterns that indicate infrastructure failures (retry-eligible).
+# These are NOT semantic failures — the model never produced a response.
+_INFRO_ERROR_RE = re.compile(
+    r"(?:"
+    r"timeout|timed[\s-]?out|"             # timeout
+    r"connection(?:[\s-]?error)?|"         # connection errors
+    r"connect|reset|broken[\s-]?pipe|"     # network errors
+    r"overloaded|rate[\s-]?limit|429|"     # rate limits
+    r"5\d{2}|"                             # HTTP 5xx
+    r"service[\s-]?unavailable|bad[\s-]?gateway|"  # gateway errors
+    r"temporary|unavailable|"              # generic temporary
+    r"read[\s-]?timeout|"                  # read timeout
+    r"apiconnection|apitimeout|"           # SDK error class names
+    r"eof|empty[\s-]?response|"            # empty/broken responses
+    r"max[\s-]?retries|retry"              # upstream retry exhaustion
+    r")",
+    re.IGNORECASE,
+)
+
+# Patterns that indicate semantic/auth errors (NOT retried).
+# These mean the model DID respond, or the request itself is invalid —
+# retrying won't change the outcome.
+_NON_INFRA_ERROR_RE = re.compile(
+    r"(?:"
+    r"context[\s-]?length|token[\s-]?limit|"     # input too long
+    r"invalid[\s-]?api[\s-]?key|authentication|401|403|"  # auth errors
+    r"model[\s-]?not[\s-]?found|404|"            # model doesn't exist
+    r"content[\s-]?filter|safety"                # content policy (NO trailing |)
+    r")",
+    re.IGNORECASE,
+)
+
+
+def is_infra_error(error_str: str) -> bool:
+    """Classify whether an error is infrastructure-related (retry-eligible).
+
+    Only infrastructure errors (timeout, network, rate-limit, 5xx) are
+    retried. Semantic errors (model answered wrong, auth failure, content
+    filter) are NOT retried — retrying won't change the outcome.
+
+    This distinction is critical for paper integrity: we never retry a
+    model's *semantic* failure, only its failure to *respond at all*.
+    """
+    if _NON_INFRA_ERROR_RE.search(error_str):
+        return False
+    return bool(_INFRO_ERROR_RE.search(error_str))
 
 
 # ── Abstract backend ──────────────────────────────────────────────────
 
 
 class ModelBackend(ABC):
-    """Abstract base for all model backends."""
+    """Abstract base for all model backends.
+
+    Implements infra-error-only retry in :meth:`generate`. Subclasses
+    implement :meth:`_generate_once` for the actual API/model call.
+
+    The retry policy is deliberately conservative:
+
+    - **Retried**: timeout, connection error, 5xx, rate-limit (429),
+      overloaded, empty response. These are infrastructure failures
+      where the model never had a chance to respond.
+    - **Not retried**: auth errors (401/403), model-not-found (404),
+      context-length-exceeded, content-filter. These are request-level
+      issues that retrying cannot fix.
+    - **Never retried**: semantic failures (model responded but the
+      answer was judged incorrect). These are handled by the judge, not
+      the backend.
+
+    The ``retries`` field on :class:`ModelResponse` records how many
+    retry attempts were needed (0 = first attempt succeeded). This
+    is logged in the benchmark results for full audit transparency.
+    """
 
     name: str
     backend_type: str  # "local" or "api"
 
-    @abstractmethod
+    #: Maximum retry attempts for infrastructure errors.
+    max_retries: int = 2
+
+    #: Base backoff in seconds (doubled per attempt: 2, 4, 8...).
+    retry_backoff_base: float = 2.0
+
     def generate(
         self,
         prompt: str,
         config: GenerationConfig | None = None,
     ) -> ModelResponse:
-        """Generate text from a prompt."""
+        """Generate text with infra-error retry.
+
+        Calls :meth:`_generate_once` and retries only on infrastructure
+        errors (timeout, network, rate-limit). Semantic failures (model
+        answered but the answer is wrong) are NOT retried.
+
+        The ``retries`` field on the returned :class:`ModelResponse`
+        records how many retries were needed (0 = first attempt succeeded).
+        """
+        config = config or GenerationConfig()
+        last_response: ModelResponse | None = None
+
+        for attempt in range(self.max_retries + 1):
+            response = self._generate_once(prompt, config)
+            response.retries = attempt
+
+            # Success or non-infra error → return immediately
+            if response.error is None:
+                return response
+            if not is_infra_error(response.error):
+                return response
+
+            # Infra error → retry with exponential backoff
+            last_response = response
+            if attempt < self.max_retries:
+                backoff = self.retry_backoff_base * (2 ** attempt)
+                print(
+                    f"  [retry] {self.name} infra error "
+                    f"(attempt {attempt + 1}/{self.max_retries + 1}), "
+                    f"retrying in {backoff:.0f}s: {response.error[:80]}",
+                    file=sys.stderr,
+                )
+                time.sleep(backoff)
+
+        # All retries exhausted — return last error response
+        return last_response  # type: ignore[return-value]
+
+    @abstractmethod
+    def _generate_once(
+        self,
+        prompt: str,
+        config: GenerationConfig,
+    ) -> ModelResponse:
+        """Single attempt — override in subclasses."""
         raise NotImplementedError
 
     def __repr__(self) -> str:
@@ -145,16 +272,11 @@ class LocalHFBackend(ModelBackend):
         self._model.eval()
         print(f"  [load] {self.name} ready", file=sys.stderr)
 
-    def generate(
+    def _generate_once(
         self,
         prompt: str,
-        config: GenerationConfig | None = None,
+        config: GenerationConfig,
     ) -> ModelResponse:
-        import time
-
-        self._load()
-        config = config or GenerationConfig()
-
         try:
             import torch
 
@@ -224,14 +346,11 @@ class OpenAIBackend(ModelBackend):
         self._client = OpenAI(api_key=api_key, base_url=base_url)
         return self._client
 
-    def generate(
+    def _generate_once(
         self,
         prompt: str,
-        config: GenerationConfig | None = None,
+        config: GenerationConfig,
     ) -> ModelResponse:
-        import time
-
-        config = config or GenerationConfig()
         try:
             client = self._get_client()
             t0 = time.time()
@@ -253,6 +372,17 @@ class OpenAIBackend(ModelBackend):
 
             elapsed = time.time() - t0
             text = "".join(chunks).strip()
+
+            # Empty response is treated as an infra error (retryable)
+            if not text:
+                return ModelResponse(
+                    text="",
+                    model=self.name,
+                    backend="api",
+                    elapsed=elapsed,
+                    error="Empty response from model",
+                )
+
             return ModelResponse(
                 text=text,
                 model=self.name,
@@ -298,14 +428,11 @@ class AnthropicBackend(ModelBackend):
         self._client = anthropic.Anthropic(api_key=api_key)
         return self._client
 
-    def generate(
+    def _generate_once(
         self,
         prompt: str,
-        config: GenerationConfig | None = None,
+        config: GenerationConfig,
     ) -> ModelResponse:
-        import time
-
-        config = config or GenerationConfig()
         try:
             client = self._get_client()
             t0 = time.time()
@@ -365,14 +492,11 @@ class GeminiBackend(ModelBackend):
         self._model = genai.GenerativeModel(self.model_id)
         return self._model
 
-    def generate(
+    def _generate_once(
         self,
         prompt: str,
-        config: GenerationConfig | None = None,
+        config: GenerationConfig,
     ) -> ModelResponse:
-        import time
-
-        config = config or GenerationConfig()
         try:
             model = self._get_model()
             t0 = time.time()

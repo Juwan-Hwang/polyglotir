@@ -195,7 +195,7 @@ def run_smoke_test(
                 print(f"  [{len(all_results)+1}/{total}] {run_id}", end="",
                       file=sys.stderr, flush=True)
 
-                # Generate
+                # Generate (with infra-error retry built into generate())
                 response = model.generate(
                     prompt,
                     GenerationConfig(
@@ -206,7 +206,8 @@ def run_smoke_test(
                 )
 
                 if response.error:
-                    print(f" → ERROR: {response.error[:60]}",
+                    retry_note = f" (retried {response.retries}x)" if response.retries else ""
+                    print(f" → ERROR{retry_note}: {response.error[:60]}",
                           file=sys.stderr)
                     result = {
                         "case_id": case_id,
@@ -218,6 +219,7 @@ def run_smoke_test(
                         "judge_reason": f"Model error: {response.error}",
                         "judge": "error",
                         "elapsed": response.elapsed,
+                        "retries": response.retries,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                         "first_pass": False,
                     }
@@ -254,6 +256,7 @@ def run_smoke_test(
                         "llm_verdict": llm_verdict,
                         "llm_reason": llm_reason,
                         "elapsed": response.elapsed,
+                        "retries": response.retries,
                         "timestamp": datetime.now(timezone.utc).isoformat(),
                         "first_pass": judge_result.passed,
                     }
