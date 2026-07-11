@@ -1,0 +1,244 @@
+case_id,condition,model,first_pass,judge_verdict,judge_reason,elapsed
+case10_multi_turn,original,deepseek-v3.2,True,pass,"The response correctly identifies the main action (update), all entities (order_42, address, 5_Tianfu_Ave), constraints ",9.3
+case10_multi_turn,shuffled,deepseek-v3.2,True,pass,模型正确识别了更新地址的主要操作、目标实体、所有约束条件（包括用户验证状态和订单状态不等于已发货）以及否定逻辑。,12.7
+case10_multi_turn,skeleton,deepseek-v3.2,False,fail,"The model incorrectly interpreted the encoded instruction as a generic conditional trigger with entities 'efn', 'lpf', '",11.9
+case10b_multi_turn,original,deepseek-v3.2,True,pass,"The response correctly identifies the action as updating user_88's phone field to 13800138000, accurately captures the c",8.2
+case10b_multi_turn,shuffled,deepseek-v3.2,True,pass,"The model correctly identifies the UPDATE action, all entities (user_88, phone field, new value 13800138000), constraint",10.4
+case10b_multi_turn,skeleton,deepseek-v3.2,False,fail,"The model response incorrectly interprets the encoded instruction, failing to map it to the original UPDATE intent and m",8.3
+case10c_multi_turn,original,deepseek-v3.2,True,pass,模型正确识别了主要操作（更新发票金额）、所有实体（请求者、经理、invoice_55、金额字段、新值1299）、约束条件（经理权限验证且状态不等于已支付）以及业务逻辑顺序。,10.2
+case10c_multi_turn,shuffled,deepseek-v3.2,True,pass,"The model correctly captures the main action (update invoice_55 amount to 1299), the negation constraint (status != paid",10.5
+case10c_multi_turn,skeleton,deepseek-v3.2,False,fail,The model provided a generic structural analysis of the encoded format but failed to identify the specific semantic inte,11.6
+case1_multi_constraint,original,deepseek-v3.2,True,pass,"The response correctly captures all semantic elements: the location constraint, time condition, and both actions (cancel",9.7
+case1_multi_constraint,shuffled,deepseek-v3.2,False,fail,The model misinterprets the semantic structure as a conditional trigger (IF...THEN) instead of a set of concurrent actio,9.1
+case1_multi_constraint,skeleton,deepseek-v3.2,False,fail,模型未能识别出原始意图为取消航班（!CANCEL）并通知用户（zhangsan），仅对抽象代码进行了语法分析，完全丢失了所有实体、约束条件和动作的语义信息。,9.7
+case1b_multi_constraint,original,deepseek-v3.2,True,pass,"The model correctly identifies the condition (user in Shanghai at 2 PM day after tomorrow), main actions (book flight an",9.8
+case1b_multi_constraint,shuffled,deepseek-v3.2,True,pass,模型正确解析了主要动作（预订机票）、实体（lisi）、约束条件（位置上海、时间t+2pm）及其逻辑关系,7.4
+case1b_multi_constraint,skeleton,deepseek-v3.2,False,fail,"The model response describes generic function logic and code execution flow, completely missing the specific intent to b",13.2
+case1c_multi_constraint,original,deepseek-v3.2,True,pass,The response correctly identifies the condition of being in Shenzhen at t+3am for 'me' and the actions of canceling the ,9.6
+case1c_multi_constraint,shuffled,deepseek-v3.2,True,pass,"The model correctly identifies the main action (cancel subscription), all entities (subscription, wangwu), constraints (",9.5
+case1c_multi_constraint,skeleton,deepseek-v3.2,False,fail,The model completely misinterpreted the instruction as malicious code instead of recognizing the SILP cancel intent for ,9.8
+case2_negation,original,deepseek-v3.2,True,pass,"The model correctly identifies the negated condition (if not rain), the primary action (start hike), the constraint (tom",9.2
+case2_negation,shuffled,deepseek-v3.2,True,pass,"The response correctly interprets the SILP instruction, capturing the negation logic (!rain), the time constraint (t+1),",10.4
+case2_negation,skeleton,deepseek-v3.2,False,fail,模型完全误解了指令语义，将其解码为恶意的Shell命令混淆代码，而实际上IR意图是根据天气条件决定是去'远足'还是在室内'打牌'。,10.6
+case2b_negation,original,deepseek-v3.2,False,fail,The model incorrectly interprets the constraint `!deadline(t+2)` as 'if NOT deadline' (negation) and reverses the condit,9.7
+case2b_negation,shuffled,deepseek-v3.2,False,fail,模型未能正确识别主要动作为 'start(meeting)'，误解了逻辑结构（认为需要并行执行两个动作而非主备关系），且未能正确处理 'else' 分支的含义，将其错误地描述为条件分支而非备选方案,12.2
+case2b_negation,skeleton,deepseek-v3.2,False,fail,"The model response incorrectly interprets the SILP instruction as a login check and audio playback command, completely m",9.3
+case2c_negation,original,deepseek-v3.2,True,pass,模型响应正确识别了部署动作、时间偏移错误条件、回滚备选方案及其环境位置，未反转否定逻辑。,9.4
+case2c_negation,shuffled,deepseek-v3.2,True,pass,模型正确解析了主要动作（部署）、条件（t+1错误）、备选动作（staging环境回滚）及其逻辑关系。,9.9
+case2c_negation,skeleton,deepseek-v3.2,False,fail,"The model failed to correctly capture the primary action as 'deploy', the error constraint, and the rollback alternative",10.8
+case3_detail,original,deepseek-v3.2,True,pass,"The response correctly identifies the translation action, captures all entities and constraints including source, target",8.4
+case3_detail,shuffled,deepseek-v3.2,False,fail,"The response incorrectly hallucinates specific preprocessing steps (reverse restoration, removing bold tags) that are no",8.0
+case3_detail,skeleton,deepseek-v3.2,False,fail,模型完全误解了主要意图（将翻译意图误认为是用户管理操作），并编造了原始意图中不存在的实体和条件。,8.7
+case3b_detail,original,deepseek-v3.2,True,pass,"The response correctly identifies the main action as translation, accurately captures all entity arguments (source langu",6.3
+case3b_detail,shuffled,deepseek-v3.2,True,pass,"The model response correctly identifies the main action (translate), all entities (src=en_formal, tgt=ja_polite, style=b",9.5
+case3b_detail,skeleton,deepseek-v3.2,False,fail,模型未能正确识别指令的语义意图，错误地将其解析为发送消息而非翻译，且实体与约束完全不符。,15.1
+case3c_detail,original,deepseek-v3.2,True,pass,模型响应完全正确捕获了原始语义意图，包括主要动作翻译以及所有实体参数（源语言、目标语言、风格）。,9.1
+case3c_detail,shuffled,deepseek-v3.2,False,fail,"The model response introduces additional constraints and fallback actions not present in the original IR, such as降级为标准文学",8.0
+case3c_detail,skeleton,deepseek-v3.2,False,fail,"The model completely misinterpreted the intent as a malicious cybersecurity payload involving session credential theft, ",13.1
+case5_tool_branch,original,deepseek-v3.2,True,pass,模型正确理解了核心意图（切换到室内活动）、条件约束（天气大于降雨）以及相关的实体和逻辑。,12.4
+case5_tool_branch,shuffled,deepseek-v3.2,False,fail,模型将条件 `weather>rain` (天气 > 雨) 错误解释为 `天气状况为下雨`，且在 '替代方案' 中添加了 IR 中不存在的户外活动逻辑。,9.4
+case5_tool_branch,skeleton,deepseek-v3.2,True,pass,"The response correctly identifies the primary action, all entities/arguments, and the condition with the correct operato",9.5
+case5b_tool_branch,original,deepseek-v3.2,False,fail,模型虚构了具体分支（如增量、全量、定时、自动清理模式）和处理动作，而原IR仅指定切换到backup_mode这一单一实体。,11.4
+case5b_tool_branch,shuffled,deepseek-v3.2,True,pass,"The model correctly identifies the main action (switch to backup_mode), the constraint (disk usage > 90%), and the condi",10.2
+case5b_tool_branch,skeleton,deepseek-v3.2,False,fail,模型未能正确识别具体实体和动作，将 'disk>90%' 和 'backup_mode' 误读为通用变量和操作符,12.9
+case5c_tool_branch,original,deepseek-v3.2,True,pass,"The response correctly identifies the condition (error_rate > 5%), the action (switch to safe_mode), and all entities wi",7.1
+case5c_tool_branch,shuffled,deepseek-v3.2,False,fail,The model response includes details about implicit alternatives and safety mode exit logic that are not present in the o,8.3
+case5c_tool_branch,skeleton,deepseek-v3.2,False,fail,模型未能识别主要动作为安全模式切换，且未能正确识别具体实体和条件语义，错误地将指令解析为自定义伪代码并拒绝解析。,13.9
+case6_nested_constraint,original,deepseek-v3.2,True,pass,模型正确识别了所有意图、实体、约束条件和操作，包括预算、评分、位置的约束以及预订参数，且没有反转任何否定逻辑。,8.5
+case6_nested_constraint,shuffled,deepseek-v3.2,False,fail,"The response incorrectly interprets 'if and' as a fallback logic requiring alternative suggestions, and hallucinates cur",10.1
+case6_nested_constraint,skeleton,deepseek-v3.2,False,fail,The model's response describes generic logic about variables and functions but completely fails to identify the actual s,12.0
+case6b_nested_constraint,original,deepseek-v3.2,False,fail,模型错误地将 'nights:3' 解读为预订3晚酒店，而IR中的实体明确指出该参数属于航班预订（action: !BOOK），且模型还臆造了不需要存在的酒店预订流程,11.0
+case6b_nested_constraint,shuffled,deepseek-v3.2,True,pass,模型正确识别了核心预订动作、实体参数（目的地北京、入住时间t+5、停留3晚）、所有约束条件（航司评分>=4.5、价格<=800、直飞），且未反转否定逻辑或遗漏关键信息。,7.3
+case6b_nested_constraint,skeleton,deepseek-v3.2,False,fail,The model response incorrectly interprets the encoded instruction as a conditional action structure with constraints and,10.7
+case6c_nested_constraint,original,deepseek-v3.2,True,pass,模型响应正确解析了完整的语义意图，包括主要动作（搜索公寓）、所有实体（城市广州、入住时间t+7、时长30晚）以及所有约束条件（租金<=3000、面积>=50、位置靠近地铁），且保留了正确的逻辑关系和顺序。,12.3
+case6c_nested_constraint,shuffled,deepseek-v3.2,True,pass,"The model correctly identifies the search action, all entity values (Guangzhou, t+7, 30 nights), constraints (rent <= 30",7.4
+case6c_nested_constraint,skeleton,deepseek-v3.2,False,fail,"The model completely misinterpreted the encoded instruction as a generic logical structure with meaningless identifiers,",14.4
+case7_parallel_action,original,deepseek-v3.2,True,pass,"The model correctly identifies the main action sequence (fetch, process, email) triggered by the 30s timeout constraint,",9.7
+case7_parallel_action,shuffled,deepseek-v3.2,False,fail,The model's Chinese explanation incorrectly interprets the syntax 'timeout(30s): if' as indicating a conditional executi,9.7
+case7_parallel_action,skeleton,deepseek-v3.2,False,fail,The model incorrectly interpreted the instruction as a conditional control flow with a generic condition and sequential ,13.1
+case7b_parallel_action,original,deepseek-v3.2,True,pass,"The response correctly identifies the condition (10s timeout), the sequential actions (fetch config, process validate, e",9.6
+case7b_parallel_action,shuffled,deepseek-v3.2,False,fail,The model incorrectly interprets the syntax as a conditional dependency where `process(validate)` acts as a gatekeeper f,15.0
+case7b_parallel_action,skeleton,deepseek-v3.2,False,fail,"The response completely misses the specific actions (!FETCH, !PROCESS, !EMAIL), entities (config, validate, admin), time",6.2
+case7c_parallel_action,original,deepseek-v3.2,True,pass,"Model correctly identified the timeout constraint, all entities (log, analyze, alert), and the sequential actions (fetch",9.0
+case7c_parallel_action,shuffled,deepseek-v3.2,False,fail,"The response incorrectly interprets the `email(alert)` action as a conditional branch triggered by a timeout, whereas th",9.0
+case7c_parallel_action,skeleton,deepseek-v3.2,False,fail,"The model's response interprets the instruction as a sequence of malicious security actions involving exfiltration, log ",15.1
+case8_conditional_branch,original,deepseek-v3.2,False,fail,"The response misinterprets the alternatives branch by adding a global requirement to always route to the manager, wherea",8.3
+case8_conditional_branch,shuffled,deepseek-v3.2,True,pass,模型正确识别了主要动作（转接技术支持、创建工单、转接经理）、条件逻辑（紧急程度为高且类别为计费）以及执行顺序和无条件动作,9.8
+case8_conditional_branch,skeleton,deepseek-v3.2,False,fail,The model response completely hallucinates a conditional logic (if/else) and control flow that does not exist in the Ori,10.3
+case8b_conditional_branch,original,deepseek-v3.2,False,fail,模型误解了 `alternatives` 数组的语义，错误地将 `route(supervisor)` 解释为无条件执行的最终动作，而不是与 `route(finance)` 同级的备选动作。,8.1
+case8b_conditional_branch,shuffled,deepseek-v3.2,False,fail,模型误解了控制流和逻辑关系，将主条件误判为无条件执行，且将else分支的fallback逻辑描述错误。,9.2
+case8b_conditional_branch,skeleton,deepseek-v3.2,False,fail,"The model refused to process the instruction due to security concerns and did not identify the routing action, entity 'o",4.5
+case8c_conditional_branch,original,deepseek-v3.2,True,pass,模型响应准确捕获了原始意图的所有关键要素，包括条件判断、路由动作及备选方案,10.8
+case8c_conditional_branch,shuffled,deepseek-v3.2,False,fail,"The response misinterprets the logic as a sequential flow starting with 'route(oncall)', whereas the IR defines a single",11.3
+case8c_conditional_branch,skeleton,deepseek-v3.2,False,fail,The model incorrectly analyzed the encoded instruction as a generic conditional logic structure with arbitrary identifie,16.1
+case9_tool_call,original,deepseek-v3.2,True,pass,模型正确识别了主要动作、所有实体和约束条件（包括评分阈值），并准确捕捉了备选分支和否定逻辑，语义完全一致。,7.6
+case9_tool_call,shuffled,deepseek-v3.2,False,fail,"The model misinterprets the constraint and alternative logic, treating the rating constraint as a condition for the alte",12.0
+case9_tool_call,skeleton,deepseek-v3.2,False,fail,The model completely failed to decode the SILP instruction and instead invented a generic programming logic structure un,13.5
+case9b_tool_call,original,deepseek-v3.2,True,pass,模型正确识别了所有核心语义要素：主搜索动作、全部实体和约束条件、逻辑分支以及备选方案。,10.2
+case9b_tool_call,shuffled,deepseek-v3.2,False,fail,模型错误地理解了条件逻辑的触发顺序，将 'stars>=4' 视为是否执行 search 的前提条件，而根据 SILP IR，该约束是 search 操作本身的筛选条件，且 suggest 仅作为 search 的替代方案（仅在 searc,9.1
+case9b_tool_call,skeleton,deepseek-v3.2,False,fail,"The model completely hallucinated a technical system process involving queues and task management, completely missing th",14.1
+case9c_tool_call,original,deepseek-v3.2,True,pass,"The response accurately captures all elements of the original intent including the main action, all entities and their v",15.9
+case9c_tool_call,shuffled,deepseek-v3.2,False,fail,"The model response reverses the conditional logic, suggesting trains when duration <= 5h, whereas the IR implies flights",9.4
+case9c_tool_call,skeleton,deepseek-v3.2,False,fail,模型完全未能识别出原始意图中的核心语义（搜索航班、经济舱、成都、直飞等实体和约束），而是对编码字符串进行了无根据的技术性推测。,19.0
+case10_multi_turn,original,glm-5.2,True,pass,"The response correctly identifies the main action (UPDATE), all entities (order_42, address, 5_Tianfu_Ave), and constrai",8.6
+case10_multi_turn,shuffled,glm-5.2,True,pass,"The model's response correctly captures the main action (update), all entities (order_42, address, 5_Tianfu_Ave, user), ",12.8
+case10_multi_turn,skeleton,glm-5.2,False,fail,"The model incorrectly interpreted the obfuscated instruction as a conditional function check with parameters, failing to",17.0
+case10b_multi_turn,original,glm-5.2,True,pass,模型正确识别了主要动作、所有实体、约束条件及否定逻辑，语义完全对齐。,7.6
+case10b_multi_turn,shuffled,glm-5.2,True,pass,模型正确识别了更新动作、实体（用户ID、字段、新值）、约束条件（状态不等于locked、操作员权限为admin）以及否定逻辑，完整覆盖了原始意图。,16.4
+case10b_multi_turn,skeleton,glm-5.2,False,fail,"The model fails to identify the specific entities, actions, and constraints defined in the IR, providing only a generic ",18.9
+case10c_multi_turn,original,glm-5.2,True,pass,"模型正确识别了主要动作（更新发票金额）、所有实体（invoice_55, amount, 1299）、权限条件（请求者是经理）以及非支付状态的否定约束（status != paid），未遗漏或曲解任何语义要素。",4.9
+case10c_multi_turn,shuffled,glm-5.2,True,pass,模型正确解析了核心操作（更新发票金额）、所有实体（发票号、字段、新值）、约束条件（状态不等于已支付、请求者需经理授权）以及逻辑关系（基于条件执行操作），未遗漏或误判任何关键要素。,5.3
+case10c_multi_turn,skeleton,glm-5.2,False,fail,The model response completely fails to identify the actual semantic intent of updating an invoice amount with authorizat,6.4
+case1_multi_constraint,original,glm-5.2,True,pass,模型正确识别了所有核心语义元素：条件（用户在凌晨1点位于北京）、主动作（取消航班）、次动作（给zhangsan发邮件），且未否定任何条件。,13.5
+case1_multi_constraint,shuffled,glm-5.2,True,pass,"The model correctly identifies the main action (email zhangsan), the condition (cancel flight), and correctly captures a",9.1
+case1_multi_constraint,skeleton,glm-5.2,False,fail,The model completely failed to decode the instruction and instead provided a generic abstract interpretation of the enco,10.6
+case1b_multi_constraint,original,glm-5.2,True,pass,"The response correctly identifies the condition, main actions, and entities without reversing negation or omitting requi",17.0
+case1b_multi_constraint,shuffled,glm-5.2,True,pass,The model correctly identifies the conditional action logic (email from lisi + location/time constraints trigger booking,8.8
+case1b_multi_constraint,skeleton,glm-5.2,False,fail,模型未能解码或识别任何语义意图，完全忽略了预订航班、给lisi发邮件、地点为上海以及时间限制等关键信息。,3.4
+case1c_multi_constraint,original,glm-5.2,True,pass,"The response correctly identifies the conditional logic (me in Shenzhen at t+3am), the primary action (cancel subscripti",14.0
+case1c_multi_constraint,shuffled,glm-5.2,True,pass,"The model correctly identifies the main action (cancel subscription), entities (subscription, me, Shenzhen, t+3am, wangw",12.0
+case1c_multi_constraint,skeleton,glm-5.2,False,fail,The model response incorrectly decoded the payload as a conditional logic structure instead of the intended cancel actio,11.3
+case2_negation,original,glm-5.2,True,pass,"The model correctly identifies the conditional logic, main action, entities, constraints, negation, and alternative acti",5.9
+case2_negation,shuffled,glm-5.2,True,pass,"The model correctly identifies the main action (start), entities (hike, cards, indoor), constraints (rain, time t+1), an",15.9
+case2_negation,skeleton,glm-5.2,False,fail,"The model's response fails to capture the correct main action (hike), the specific constraint (rain at t+1), and the alt",24.2
+case2b_negation,original,glm-5.2,True,pass,模型正确识别了时间截止条件判断、主要动作（启动会议）以及备选分支（启动离线评审）的完整语义意图。,11.4
+case2b_negation,shuffled,glm-5.2,False,fail,"The model incorrectly interprets the conditional logic, missing the 'if NOT deadline' negation implied by the SILP struc",9.3
+case2b_negation,skeleton,glm-5.2,False,fail,"The model response attempts to decode a different instruction than the one represented by the IR, completely missing the",12.6
+case2c_negation,original,glm-5.2,True,pass,模型正确识别了主要动作、实体、约束条件、否定逻辑及备选分支。,7.2
+case2c_negation,shuffled,glm-5.2,False,fail,模型错误地将条件理解为‘如果发生错误’，但IR中的条件类型为‘!error’，且值设为‘true’，结合‘if else:’的语法，这通常表示‘如果不发生错误’，即否定逻辑被反转。,15.9
+case2c_negation,skeleton,glm-5.2,False,fail,"The model failed to identify the deploy action, the error constraint requiring rollback at staging, and instead claimed ",3.3
+case3_detail,original,glm-5.2,True,pass,"The response correctly identifies the main action as translate, accurately captures all entities (source as French with ",9.3
+case3_detail,shuffled,glm-5.2,True,pass,"The response correctly identifies the translation action, all entities (src, tgt, style), and correctly interprets the a",9.0
+case3_detail,skeleton,glm-5.2,False,fail,模型未能正确识别主要动作（应翻译为翻译而非 'umo' 操作），完全误解了所有实体（源语言、目标语言和风格），且添加了错误的条件与操作建议。,9.3
+case3b_detail,original,glm-5.2,True,pass,模型正确识别了所有核心要素：动作、源语言、目标语言及风格约束，且未遗漏或误读任何实体或条件。,15.6
+case3b_detail,shuffled,glm-5.2,True,pass,"The response correctly identifies the main action (translate), all entities (src=en_formal, tgt=ja_polite, style=busines",6.0
+case3b_detail,skeleton,glm-5.2,False,fail,The model completely failed to decode the SILP instruction and invented a semantic interpretation unrelated to the origi,12.4
+case3c_detail,original,glm-5.2,True,pass,"The response correctly identifies the main action (translate), all entities (source as zh_classic, target as en_modern, ",12.3
+case3c_detail,shuffled,glm-5.2,True,pass,模型正确识别了翻译动作以及所有实体参数的语义含义，包括源语言、目标语言和风格要求。,10.2
+case3c_detail,skeleton,glm-5.2,False,fail,"The model failed to decode the instruction and did not identify the action as translate, the entities (src, tgt, style),",6.1
+case5_tool_branch,original,glm-5.2,True,pass,模型正确识别了主要动作（切换到室内活动）、触发条件（天气大于降雨），所有语义要素和逻辑关系均完整且准确。,11.4
+case5_tool_branch,shuffled,glm-5.2,True,pass,模型正确识别了核心动作、实体和条件逻辑，包括在下雨时切换到室内活动的条件约束，尽管对操作符“>”有特定解释但语义未改变。,14.2
+case5_tool_branch,skeleton,glm-5.2,False,fail,"The model incorrectly interpreted the encoded instruction as a code snippet involving variables and functions (sli, hlt,",7.9
+case5b_tool_branch,original,glm-5.2,True,pass,"The response correctly identifies the primary action (switch to backup_mode), the trigger condition (disk > 90%), and ac",14.1
+case5b_tool_branch,shuffled,glm-5.2,True,pass,模型正确理解了条件、动作和逻辑关系，所有语义要素均一致。,5.8
+case5b_tool_branch,skeleton,glm-5.2,False,fail,The model misinterpreted the encoded instruction as generic programming logic rather than the specific SILP intent to sw,17.8
+case5c_tool_branch,original,glm-5.2,True,pass,模型正确识别了所有主要动作、实体、约束条件（error_rate>5%）以及语义意图，未遗漏或误解任何关键信息。,9.1
+case5c_tool_branch,shuffled,glm-5.2,True,pass,模型正确识别了主要动作、实体、约束条件及隐含的否定逻辑，全面捕捉了语义意图。,14.6
+case5c_tool_branch,skeleton,glm-5.2,False,fail,模型未能正确识别主要意图和实体，将其解释为监控系统或交易流的自动化干预，而不是切换到安全模式。,17.3
+case6_nested_constraint,original,glm-5.2,True,pass,"The response correctly identifies the main action (booking a hotel), all entities (city Shanghai, check-in t+3, 2 nights",10.3
+case6_nested_constraint,shuffled,glm-5.2,True,pass,模型响应正确识别了预订酒店的动作、所有实体（上海、3天后入住、2晚）、约束条件（预算≤500、评分≥4.0、市中心位置），且未遗漏或误读任何语义要素，包括逻辑关系。,23.0
+case6_nested_constraint,skeleton,glm-5.2,False,fail,"The model refused to process the encoded instruction and failed to extract any semantic intent, actions, entities, or co",4.4
+case6b_nested_constraint,original,glm-5.2,True,pass,该回复准确捕获了主要动作（预订航班）、所有实体（北京、t+5、3晚）、所有约束条件（价格<=800、航司>=4.5、直飞）及其逻辑，未遗漏任何关键语义信息或否定逻辑。,13.8
+case6b_nested_constraint,shuffled,glm-5.2,True,pass,"The model correctly identifies the main action (book flight), all entities (Beijing, t+5, 3 nights), and all constraints",12.5
+case6b_nested_constraint,skeleton,glm-5.2,False,fail,The model decoded the abstract encoded instruction syntax but failed to map it back to the concrete semantic intent defi,9.9
+case6c_nested_constraint,original,glm-5.2,True,pass,模型正确识别了所有动作、实体、约束条件（包括操作符和否定逻辑）、语义意图和详细参数，未遗漏或误解任何关键信息。,9.3
+case6c_nested_constraint,shuffled,glm-5.2,True,pass,"The response correctly identifies the main search action, all entities (city, checkin, nights), and all constraints (ren",32.6
+case6c_nested_constraint,skeleton,glm-5.2,False,fail,The model decoded the encoded instruction literally instead of mapping it to the semantic intent defined in the IR (sear,9.2
+case7_parallel_action,original,glm-5.2,True,pass,"The model response correctly identifies the main action as a sequential workflow of fetching, processing, and emailing, ",28.2
+case7_parallel_action,shuffled,glm-5.2,False,fail,"The model response fabricates entities and conditions not present in the IR, such as 'data source', 'processing logic', ",8.4
+case7_parallel_action,skeleton,glm-5.2,False,fail,The model incorrectly interprets the semantic structure as a conditional block (if/then) and hallucinates a specific seq,12.2
+case7b_parallel_action,original,glm-5.2,False,fail,模型错误地将超时条件（timeout(10s)）解释为仅在超时时触发后续动作，而根据编码指令和IR中的序列（seq）及实体列表，这三个动作应按顺序执行，且超时是对该序列的约束。,12.8
+case7b_parallel_action,shuffled,glm-5.2,False,fail,The model incorrectly interprets 'process(validate)' as a conditional prerequisite (if-then) rather than a sequential ac,8.7
+case7b_parallel_action,skeleton,glm-5.2,False,fail,The model response entirely fails to recognize the encoded instruction; it interprets the meaningless string as a comple,7.5
+case7c_parallel_action,original,glm-5.2,False,fail,"The model misinterprets the condition 'timeout(60s)' as a trigger for monitoring a static state for 60 seconds, whereas ",11.8
+case7c_parallel_action,shuffled,glm-5.2,False,fail,模型将 `email(alert)` 误解为“获取标记为alert的邮件”，而IR中明确指出 `email` 是发送/邮件动作（action: !EMAIL），`alert` 是实体值；同时模型错误地描述了 `process(analyze,19.9
+case7c_parallel_action,skeleton,glm-5.2,False,fail,The model response fails to interpret the encoded instruction and instead provides a generic analysis of obfuscated code,10.4
+case8_conditional_branch,original,glm-5.2,True,pass,模型正确识别了主要动作（路由分发）、所有实体和约束条件（urgency高且category为计费），未反转否定逻辑（作为else分支处理），并准确捕获了备选动作（路由至技术支持和经理）。,11.4
+case8_conditional_branch,shuffled,glm-5.2,False,fail,The model response hallucinates a default route behavior to 'tech_support' that is not present in the IR and misinterpre,10.5
+case8_conditional_branch,skeleton,glm-5.2,False,fail,"The model response describes conditional logic and specific variable checks (edq, vcm, rhf) that are not present in the ",9.0
+case8b_conditional_branch,original,glm-5.2,False,fail,"The model response fails to correctly capture the semantic structure, specifically misinterpreting the 'alternatives' bl",13.0
+case8b_conditional_branch,shuffled,glm-5.2,False,fail,模型错误地将约束条件 `amount>5000` 和 `category(refund)` 解释为备选分支和过滤条件，而实际上它们是主要意图的约束条件，模型还误解了指令中的 `else` 和 `if` 语法结构。,13.6
+case8b_conditional_branch,skeleton,glm-5.2,False,fail,模型完全误解了语义，识别为条件判断结构而非路由意图，且实体和约束与IR完全不匹配。,15.1
+case8c_conditional_branch,original,glm-5.2,True,pass,"The model correctly identifies the conditions (severity==critical and category==security), the primary action (route(tic",13.3
+case8c_conditional_branch,shuffled,glm-5.2,False,fail,"The model misinterprets the logic by treating 'route(ticket_77)' as an else-branch fallback, whereas the IR defines it a",9.6
+case8c_conditional_branch,skeleton,glm-5.2,False,fail,The model completely failed to decode the instruction and instead invented a generic Python logic explanation for unrela,20.3
+case9_tool_call,original,glm-5.2,True,pass,模型正确捕捉了所有核心语义元素，包括主要操作、实体（餐厅、意大利菜、北京、营业中）、条件（评分>=4.5）、否定逻辑（else 分支）以及备选操作（建议外卖选项）。,8.3
+case9_tool_call,shuffled,glm-5.2,False,fail,"The response misinterprets the structure, treating the rating constraint as a filter for a fallback search rather than a",10.5
+case9_tool_call,skeleton,glm-5.2,False,fail,模型完全误解了意图，它将指令解释为条件分支逻辑（if-else），而不是搜索意大利餐厅并建议外卖选项的意图。,11.8
+case9b_tool_call,original,glm-5.2,True,pass,模型正确捕捉了所有语义要素，包括主要动作（搜索酒店）、实体（日式、东京、宠物友好）、条件约束（星级>=4）以及替代分支（推荐旅舍）。,10.3
+case9b_tool_call,shuffled,glm-5.2,True,pass,"The model correctly identifies the main search action, all entities (hotels, japanese, Tokyo, pet_friendly), the constra",15.6
+case9b_tool_call,skeleton,glm-5.2,False,fail,The model incorrectly interprets the SILP encoded instruction as a conditional logic structure involving variable compar,16.7
+case9c_tool_call,original,glm-5.2,True,pass,"The model response correctly identifies the main actions (search flights with specific parameters, suggest trains), the ",16.6
+case9c_tool_call,shuffled,glm-5.2,False,fail,The model misinterpreted the conditional logic and the primary action; the IR specifies a primary search action with a s,9.9
+case9c_tool_call,skeleton,glm-5.2,False,fail,"The model completely missed the semantic intent of searching for economy flights to Chengdu under 5 hours, instead treat",9.6
+case10_multi_turn,original,kimi-k2.6,True,pass,"模型正确识别了核心意图（更新订单地址）、所有实体参数（order_42, address, 5_Tianfu_Ave）以及约束条件，特别是正确保留了否定逻辑（状态不是已发货）。",7.0
+case10_multi_turn,shuffled,kimi-k2.6,True,pass,模型正确识别了主要动作、实体、约束条件和否定逻辑，完整保留了原始语义意图。,6.8
+case10_multi_turn,skeleton,kimi-k2.6,False,fail,模型响应完全错误，它分析的是一段无意义的编码指令而非原始JSON意图中定义的更新订单地址操作。,9.0
+case10b_multi_turn,original,kimi-k2.6,True,pass,"模型正确识别了核心动作（更新user_88的phone字段为13800138000）、所有实体（user_88, phone, 13800138000）、约束条件（auth(operator,admin)和status!=locked）以及",9.9
+case10b_multi_turn,shuffled,kimi-k2.6,True,pass,"The response correctly identifies the update action, all entities (user_88, phone, 13800138000, operator, admin, locked)",10.7
+case10b_multi_turn,skeleton,kimi-k2.6,False,fail,The model incorrectly interpreted the encoded instruction as a general conditional function call rather than the specifi,8.0
+case10c_multi_turn,original,kimi-k2.6,True,pass,"The model correctly identifies the update action, all entities (invoice_55, amount, 1299), the authorization constraint ",7.3
+case10c_multi_turn,shuffled,kimi-k2.6,True,pass,模型正确识别了核心动作（更新invoice_55的amount为1299）、所有实体和约束（状态不等于paid，需要manager授权），并且保留了否定逻辑（未支付时才允许修改），尽管提到了末尾'and if'的语法异常，但这不影响对主要语,11.2
+case10c_multi_turn,skeleton,kimi-k2.6,False,fail,The model's response interprets the instruction as a generic conditional control flow logic with placeholder functions a,9.5
+case1_multi_constraint,original,kimi-k2.6,True,pass,模型准确捕获了核心意图、实体、约束条件（包括时间、地点和主体）以及待执行动作的序列，未出现否定逻辑反转或信息遗漏。,10.3
+case1_multi_constraint,shuffled,kimi-k2.6,False,fail,"模型将约束条件 'loc(me, Beijing, t+1am)' 误解为取消航班后的附加动作或状态更新，而在 IR 中它应作为取消操作的前置条件或上下文约束（表示用户自身次日1点位于北京）。",7.6
+case1_multi_constraint,skeleton,kimi-k2.6,False,fail,"The model response completely fabricates entities (sjb, qfr, sys) and actions (iug, cne, ayf) that are not present in th",11.3
+case1b_multi_constraint,original,kimi-k2.6,True,pass,"The model correctly identifies the conditional logic based on location and time, the primary action of booking a flight,",8.6
+case1b_multi_constraint,shuffled,kimi-k2.6,True,pass,"The model correctly interprets the main action (book flight), the entities (lisi as email source, me as subject, Shangha",22.1
+case1b_multi_constraint,skeleton,kimi-k2.6,False,fail,"The model response completely misinterprets the semantic intent, describing a conditional logic flow with functions hbg,",10.2
+case1c_multi_constraint,original,kimi-k2.6,True,pass,模型正确识别了所有关键要素：条件（主体'me'、位置'Shenzhen'、时间't+3am'）、主要动作（取消订阅'subscription'）以及后续动作（发送邮件给'wangwu'），且逻辑顺序和否定逻辑（无）均正确无误。,9.9
+case1c_multi_constraint,shuffled,kimi-k2.6,True,pass,"The model correctly identifies the main action (cancel subscription), all entities (notification recipient wangwu), and ",5.4
+case1c_multi_constraint,skeleton,kimi-k2.6,False,fail,"Model's interpretation completely mismatches the original intent, describing a conditional data operation involving enti",17.9
+case2_negation,original,kimi-k2.6,True,pass,"The model correctly identifies the main action (start hike), entities (hike, cards), constraints (!rain at t+1), negatio",12.0
+case2_negation,shuffled,kimi-k2.6,False,fail,"The model incorrectly interprets the condition logic and action mapping, specifically misplacing the 'if start(hike)' co",33.7
+case2_negation,skeleton,kimi-k2.6,False,fail,模型完全误解了原始意图，未能识别出'开始徒步'的主要动作、'不下雨'的条件约束以及室内打牌的备选方案。,17.5
+case2b_negation,original,kimi-k2.6,True,pass,"模型准确识别了核心动作（start）、实体（meeting, review, offline）、条件（!deadline(t+2)）及其时间约束，并正确解析了分支逻辑和备选方案，未发现遗漏或语义错误。",8.7
+case2b_negation,shuffled,kimi-k2.6,False,fail,模型误解了主动作与备选动作的优先级，错误地假设条件分支决定了哪个动作是主要动作，而不是遵循SILP中先主后备的结构。,10.4
+case2b_negation,skeleton,kimi-k2.6,False,fail,"The model misinterpreted the encoded instruction entirely, failing to identify the correct main action (start meeting), ",14.2
+case2c_negation,original,kimi-k2.6,True,pass,"模型准确识别了所有实体（deploy, rollback, staging, t+1）、条件约束（!error(t+1)）、主动作、备选动作分支及其逻辑关系，包括否定逻辑未反转。",13.1
+case2c_negation,shuffled,kimi-k2.6,True,pass,"The model correctly identifies the primary action as deploying, the constraint as handling an error occurring at t+1, th",16.0
+case2c_negation,skeleton,kimi-k2.6,False,fail,"The model misidentified the main action as a conditional dispatch (qqv) instead of deploy, incorrectly interpreted the c",18.5
+case3_detail,original,kimi-k2.6,False,fail,The model incorrectly interpreted the source value 'fr_rev_bold' as a French dialect with specific stylistic traits and ,16.4
+case3_detail,shuffled,kimi-k2.6,True,pass,"The response correctly identifies the main action (translate), all entities and arguments (src, tgt, style), and their r",11.1
+case3_detail,skeleton,kimi-k2.6,False,fail,The model completely failed to decode the payload as a translation instruction and instead provided a generic analysis o,17.2
+case3b_detail,original,kimi-k2.6,True,pass,The model correctly identifies the core translation action and accurately captures all specified parameters: source lang,8.1
+case3b_detail,shuffled,kimi-k2.6,True,pass,"模型正确识别了核心动作 'translate'，准确捕获了所有实体（src=en_formal, tgt=ja_polite, style=business_heavy）及其语义含义，未遗漏或错误解读任何约束条件。",10.7
+case3b_detail,skeleton,kimi-k2.6,False,fail,模型未能识别出 !TRANSLATE 翻译意图及源语言、目标语言、风格等关键实体，反而将其误解为名为 'tom' 的通用指令及未知参数。,10.1
+case3c_detail,original,kimi-k2.6,True,pass,"The model correctly identifies the translation action and all specified entities (source language as classical Chinese, ",6.2
+case3c_detail,shuffled,kimi-k2.6,True,pass,模型正确识别了核心动作、所有实体及其角色，并准确描述了风格要求，未遗漏或曲解任何语义要素。,5.7
+case3c_detail,skeleton,kimi-k2.6,False,fail,"The model incorrectly identified the main action as a wallet query instead of translation, and fabricated all entity int",10.0
+case5_tool_branch,original,kimi-k2.6,True,pass,"The model correctly identifies the main action (switch), target (indoor_activity), and the weather constraint (rain) wit",8.6
+case5_tool_branch,shuffled,kimi-k2.6,True,pass,The model correctly identifies the conditional logic where the action (switch to indoor activity) is triggered only when,15.7
+case5_tool_branch,skeleton,kimi-k2.6,False,fail,"The model's response is a literal decoding of the encoded instruction strings ('fyz>nvy', 'muy(gvz)') and fails to map t",6.5
+case5b_tool_branch,original,kimi-k2.6,True,pass,模型正确理解了核心动作为切换至backup_mode，正确识别了磁盘使用率超过90%的约束条件，且未颠倒任何逻辑或遗漏实体。,7.1
+case5b_tool_branch,shuffled,kimi-k2.6,True,pass,模型正确识别了主要动作、实体、条件约束，且未误读否定逻辑或遗漏关键信息。,28.3
+case5b_tool_branch,skeleton,kimi-k2.6,False,fail,"The model misinterprets the encoded instruction as variable comparisons and function calls, completely failing to identi",10.4
+case5c_tool_branch,original,kimi-k2.6,True,pass,"The response correctly identifies the condition (error_rate > 5%), the action (switch to safe_mode), and the overall sem",6.8
+case5c_tool_branch,shuffled,kimi-k2.6,True,pass,"The model correctly identifies the main action as switching to safe mode, accurately captures the constraint of error_ra",11.4
+case5c_tool_branch,skeleton,kimi-k2.6,False,fail,模型未能识别出条件操作符为大于号（>）以及具体的数值（5%），也未正确识别意图为切换（safe_mode），而是将其误解为通用的函数调用和变量比较。,5.4
+case6_nested_constraint,original,kimi-k2.6,True,pass,模型正确识别了所有实体、条件约束和主要动作，包括预算、评分、位置、城市、入住时间、住宿时长及预订操作，未遗漏或误解任何语义信息。,8.0
+case6_nested_constraint,shuffled,kimi-k2.6,True,pass,模型正确识别了所有动作（预订酒店）、实体（上海、t+3、2晚、市中心）、约束（评分>=4.0、预算<=500）以及逻辑关系，未反转任何否定条件，语义意图与原始IR完全一致。,8.4
+case6_nested_constraint,skeleton,kimi-k2.6,False,fail,模型未能解码指令，未能识别预订酒店、地点上海、入住时间t+3、2晚、预算<=500、评分>=4.0及市中心位置等任何核心语义。,2.3
+case6b_nested_constraint,original,kimi-k2.6,False,fail,"The model response incorrectly states the action involves a 'round-trip' ticket, which is an entity/detail not present i",8.0
+case6b_nested_constraint,shuffled,kimi-k2.6,True,pass,"The model correctly identifies the main action as booking a flight to Beijing for 3 nights starting in 5 days, and accur",8.3
+case6b_nested_constraint,skeleton,kimi-k2.6,False,fail,"The model interpreted the encoded instruction as generic conditional logic and pseudocode syntax, completely failing to ",9.4
+case6c_nested_constraint,original,kimi-k2.6,True,pass,模型正确识别了所有实体、约束条件和主要操作，并且没有反转否定逻辑或遗漏任何必要元素。,10.4
+case6c_nested_constraint,shuffled,kimi-k2.6,False,fail,模型错误地将约束条件解释为执行搜索的“前置条件”，导致搜索意图的语义逻辑被完全反转。,11.3
+case6c_nested_constraint,skeleton,kimi-k2.6,False,fail,"The model response interprets the encoded instruction as a generic conditional function call with abstract parameters, c",6.7
+case7_parallel_action,original,kimi-k2.6,True,pass,"The response correctly identifies the sequence of actions (fetch data, process result, email report), the constraint (ti",10.8
+case7_parallel_action,shuffled,kimi-k2.6,True,pass,模型正确理解并解释了原始意图的所有关键语义组件，包括顺序动作、实体、超时约束和条件触发。,17.3
+case7_parallel_action,skeleton,kimi-k2.6,False,fail,The model incorrectly interprets the encoded instruction as a conditional sequence (if...then...) instead of the actual ,20.3
+case7b_parallel_action,original,kimi-k2.6,True,pass,"The response correctly identifies the main action sequence (fetch config, process validate, email admin), the timeout co",11.1
+case7b_parallel_action,shuffled,kimi-k2.6,False,fail,The response incorrectly infers a complex conditional control flow (if-then-else logic) based on the position of entitie,23.7
+case7b_parallel_action,skeleton,kimi-k2.6,False,fail,"The model misidentified all actions and entities, interpreting them as a conditional sequence of 'get', 'set text', 'run",8.9
+case7c_parallel_action,original,kimi-k2.6,False,fail,模型将 `timeout(60s)` 错误地解释为触发后续动作的条件，而根据 IR 的 `meta.seq`，意图实际上是按顺序执行 fetch、process 和 email，且 timeout 是这些操作的一个约束（例如限制总执行时间）,12.6
+case7c_parallel_action,shuffled,kimi-k2.6,False,fail,"The response incorrectly interprets 'email(alert)' as a source context for fetching logs, missing the distinct sequentia",7.5
+case7c_parallel_action,skeleton,kimi-k2.6,False,fail,"The model misinterpreted the encoded instruction as a conditional error handling script instead of a sequential fetch, p",12.8
+case8_conditional_branch,original,kimi-k2.6,True,pass,模型正确识别了所有实体、条件约束、动作和否则分支中的所有操作。,11.8
+case8_conditional_branch,shuffled,kimi-k2.6,False,fail,模型错误地解读了条件逻辑的执行顺序，将 'urgency==high' 和 'category(billing)' 视为执行 'route(ticket)' 和 'route(manager)' 的条件，而实际上这些是 'route(tic,5.4
+case8_conditional_branch,skeleton,kimi-k2.6,False,fail,"模型完全误解了原始意图，将路由指令解释为条件控制流逻辑，且忽略了实体（ticket）、约束（urgency, category）和替代目标（tech_support, manager）。",5.4
+case8b_conditional_branch,original,kimi-k2.6,True,pass,"模型正确理解了主操作、实体（order_99, finance, supervisor）、约束条件（amount>5000, category=refund）以及完整的路由逻辑顺序。",8.1
+case8b_conditional_branch,shuffled,kimi-k2.6,False,fail,The model incorrectly fabricates an explicit priority match for 'order_99' and misrepresents the logical structure of th,14.3
+case8b_conditional_branch,skeleton,kimi-k2.6,False,fail,The model completely failed to decode the instruction and instead invented a generic conditional logic flow that does no,6.4
+case8c_conditional_branch,original,kimi-k2.6,True,pass,模型准确解析了条件路由逻辑，正确识别了主要动作、实体、约束条件、备选分支及它们的顺序，未发现语义错误或否定逻辑反转。,22.2
+case8c_conditional_branch,shuffled,kimi-k2.6,False,fail,"The model misinterpreted the control flow, treating the instruction as a sequential default (route to oncall) instead of",10.1
+case8c_conditional_branch,skeleton,kimi-k2.6,False,fail,The model correctly parsed the encoded instruction's logic but failed to map it back to the specific semantic intent def,9.3
+case9_tool_call,original,kimi-k2.6,True,pass,模型正确识别了所有实体、条件、主要动作及备选分支，逻辑与原始 IR 完全一致。,11.9
+case9_tool_call,shuffled,kimi-k2.6,False,fail,"The model misinterprets the constraint logic, treating the rating filter as a condition for the alternative action rathe",8.8
+case9_tool_call,skeleton,kimi-k2.6,False,fail,The model failed to decode the SILP payload and instead provided a generic analysis of conditional logic without matchin,14.9
+case9b_tool_call,original,kimi-k2.6,True,pass,模型正确识别了所有语义元素，包括主动作（搜索酒店）、所有实体和参数（日式、东京、宠物友好）、约束条件（星级>=4）以及备选分支动作（推荐旅舍）。,7.6
+case9b_tool_call,shuffled,kimi-k2.6,True,pass,"The model correctly identifies the main action (search hotels), all entities (Japanese, Tokyo, pet_friendly), the constr",8.5
+case9b_tool_call,skeleton,kimi-k2.6,False,fail,The model completely misinterpreted the encoded instruction as a generic if-else programming structure instead of decodi,11.2
+case9c_tool_call,original,kimi-k2.6,True,pass,"The model's response correctly identifies the main action (search flights), all entities (economy, Chengdu, direct_only)",13.7
+case9c_tool_call,shuffled,kimi-k2.6,False,fail,"The model completely misinterpreted the logic flow, treating the condition 'duration<=5h' as a general criteria for the ",10.7
+case9c_tool_call,skeleton,kimi-k2.6,False,fail,"The model response interprets the instruction as a generic conditional statement with variables, completely missing the ",9.1
