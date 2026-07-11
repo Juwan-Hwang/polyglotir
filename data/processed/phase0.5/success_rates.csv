@@ -1,0 +1,10 @@
+model,frontend,total,passed,pass_rate,cases_failed,rule_passed,rule_pass_rate
+deepseek-v3.2,code,9,6,66.7%,6;8;9,7,77.8%
+deepseek-v3.2,json,9,9,100.0%,,8,88.9%
+deepseek-v3.2,natural,9,6,66.7%,2;7;8,5,55.6%
+glm-5.2,code,9,8,88.9%,7,9,100.0%
+glm-5.2,json,9,8,88.9%,6,8,88.9%
+glm-5.2,natural,9,8,88.9%,4,6,66.7%
+kimi-k2.6,code,9,6,66.7%,2;4;5,6,75.0%
+kimi-k2.6,json,9,9,100.0%,,7,77.8%
+kimi-k2.6,natural,9,7,77.8%,3;8,8,88.9%

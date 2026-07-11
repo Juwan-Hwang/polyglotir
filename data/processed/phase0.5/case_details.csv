@@ -1,0 +1,82 @@
+case_id,frontend,model,llm_verdict,rule_verdict,elapsed,llm_reason,rule_reason
+case10_multi_turn,code,deepseek-v3.2,pass,pass,10.01,"The model correctly identifies the update action, all entities (order_42, address, 5_Tianfu_Ave), the authentication con",Rule-based: all key entities and verbs found
+case10_multi_turn,json,deepseek-v3.2,pass,pass,14.85,模型正确识别了核心操作（!UPDATE）、所有实体（order_42、address、5_Tianfu_Ave）、约束条件（auth:verified、status != shipped）及其否定逻辑，且未遗漏或误判任何语义元素。,Rule-based: all key entities and verbs found
+case10_multi_turn,natural,deepseek-v3.2,pass,pass,12.35,"模型正确识别了核心动作（更新订单地址）、实体（order_42, 5_Tianfu_Ave）、所有约束条件（auth verified, status != shipped）及其否定逻辑，完整捕获了原始意图。",Rule-based: all key entities and verbs found
+case1_multi_constraint,code,deepseek-v3.2,pass,pass,12.27,"The response correctly identifies the condition, main actions (cancel flight, email zhangsan), all entities (me, Beijing",Rule-based: all key entities and verbs found
+case1_multi_constraint,json,deepseek-v3.2,pass,fail,8.49,模型正确识别了取消航班的核心意图、通知实体zhangsan、北京位置和明天上午的时间约束，且未遗漏或篡改任何语义要素。,missing constraints: ['Beijing']
+case1_multi_constraint,natural,deepseek-v3.2,fail,fail,8.30,模型未完全识别约束条件中的主体为'me'，且错误声称缺少实体信息。,missing entities: ['flight']; missing constraints: ['Beijing']
+case2_negation,code,deepseek-v3.2,pass,fail,10.00,"The response correctly captures the main action (start hike), the negated condition (!rain), the alternative action (sta",missing constraints: ['true']
+case2_negation,json,deepseek-v3.2,pass,pass,7.91,模型准确识别了主意图、实体（远足）、约束条件（明天不下雨）、否定逻辑（有雨则切换）以及替代方案（室内玩纸牌）。,Rule-based: all key entities and verbs found
+case2_negation,natural,deepseek-v3.2,pass,fail,10.22,模型正确识别了条件（t+1时刻不下雨）、主要动作（徒步）和替代动作（室内打牌），语义逻辑与IR完全一致,missing entities: ['hike']; missing constraints: ['true']; missing alternatives: ['cards']
+case3_detail,code,deepseek-v3.2,pass,pass,8.56,"The model correctly identifies the main action as translation, accurately captures all entity values and their roles (so",Rule-based: all key entities and verbs found
+case3_detail,json,deepseek-v3.2,pass,pass,7.19,"The response correctly identifies the main action (translate), all entities (source as reversed bold French, target as S",Rule-based: all key entities and verbs found
+case3_detail,natural,deepseek-v3.2,pass,fail,7.79,"The model correctly identifies all entities (src as fr_rev_bold, tgt as shakespeare_en, style as archaic_heavy) and the ",missing entities: ['fr_rev_bold']
+case5_tool_branch,code,deepseek-v3.2,pass,pass,5.90,"The response correctly identifies the action switch_tool(indoor_activity) and the condition weather>rain, including the ",Rule-based: all key entities and verbs found
+case5_tool_branch,json,deepseek-v3.2,pass,pass,8.91,"The response correctly identifies the main action as switching to an indoor activity tool, correctly identifies the cons",Rule-based: all key entities and verbs found
+case5_tool_branch,natural,deepseek-v3.2,pass,pass,16.92,模型正确识别了主要动作（切换到室内活动）、实体（天气、室内活动）和条件（天气大于下雨），且未包含错误的否定逻辑或遗漏关键要素。,Rule-based: all key entities and verbs found
+case6_nested_constraint,code,deepseek-v3.2,fail,pass,10.19,模型响应错误地添加了编码指令和IR中不存在的替代方案逻辑（具体处理条件不满足时的动作），这超出了原始语义意图的范围。,Rule-based: all key entities and verbs found
+case6_nested_constraint,json,deepseek-v3.2,pass,pass,10.53,模型正确识别了核心动作(!BOOK/hotel)、所有实体(城市、入住时间、天数)、所有约束条件(预算<=500、评分>=4.0、位置=市中心)及其逻辑关系，未遗漏或误读任何语义信息。,Rule-based: all key entities and verbs found
+case6_nested_constraint,natural,deepseek-v3.2,pass,pass,9.91,"The model correctly identifies the booking action, all entities (Shanghai, t+3, 2 nights), and all constraints (budget <",Rule-based: all key entities and verbs found
+case7_parallel_action,code,deepseek-v3.2,pass,fail,10.86,"The response correctly identifies the timeout condition, the sequential actions (fetch, process, email), the entities in",missing constraints: ['30s']
+case7_parallel_action,json,deepseek-v3.2,pass,pass,10.28,"The response correctly captures all actions (fetch data, process result, email report) and the timeout constraint, with ",Rule-based: all key entities and verbs found
+case7_parallel_action,natural,deepseek-v3.2,fail,fail,9.41,模型将 'timeout' 约束误解为触发流程的条件（等待超时达到30秒后触发），而非操作本身的超时限制（必须在30秒内完成）。,missing constraints: ['30s']
+case8_conditional_branch,code,deepseek-v3.2,fail,pass,11.54,模型误解了 `alternatives` 的逻辑，错误地将 `escalate(manager)` 解释为无条件执行的操作，而不是仅在条件不满足时执行的备选分支。,Rule-based: all key entities and verbs found
+case8_conditional_branch,json,deepseek-v3.2,pass,pass,15.82,模型正确识别了所有核心语义要素：主要动作为 !ROUTE ticket，约束条件包括紧急度高和账单类别，备选方案包括路由至技术支持和升级至经理，且未反转否定逻辑或遗漏必要元素。,Rule-based: all key entities and verbs found
+case8_conditional_branch,natural,deepseek-v3.2,fail,pass,10.00,模型响应中主要动作的目标不正确，IR中目标应为ticket，但响应被解释为billing_department。,Rule-based: all key entities and verbs found
+case9_tool_call,code,deepseek-v3.2,fail,pass,8.42,"The response incorrectly interprets the 'rating' constraint as a user attribute or dynamic score, rather than a filter a",Rule-based: all key entities and verbs found
+case9_tool_call,json,deepseek-v3.2,pass,pass,9.69,模型响应正确识别了所有实体、约束条件和备选方案，未遗漏任何语义要素。,Rule-based: all key entities and verbs found
+case9_tool_call,natural,deepseek-v3.2,pass,pass,11.18,模型正确识别了主要动作（搜索餐厅）、所有实体（意大利菜、北京、当前营业中）、约束条件（评分≥4.5）以及否则分支的动作（推荐配送选项），语义意图与IR完全一致。,Rule-based: all key entities and verbs found
+case10_multi_turn,code,kimi-k2.6,pass,pass,8.64,"The model correctly identifies the update action, the target entity (order_42), the field (address), the new value (5_Ti",Rule-based: all key entities and verbs found
+case10_multi_turn,json,kimi-k2.6,pass,fail,4.35,"The model correctly identifies the main action (!UPDATE), all entities (order_42, address, 5_Tianfu_Ave), all constraint",missing entities: ['address']
+case10_multi_turn,natural,kimi-k2.6,pass,pass,7.71,"The model's response correctly identifies the main action (update), all entities (order_42, address, 5_Tianfu_Ave), all ",Rule-based: all key entities and verbs found
+case1_multi_constraint,code,kimi-k2.6,fail,,0.00,Model error: timed out,
+case1_multi_constraint,json,kimi-k2.6,pass,pass,6.38,"The model correctly identifies the main action as cancelling a flight, includes all entities (Beijing, t+1am, zhangsan),",Rule-based: all key entities and verbs found
+case1_multi_constraint,natural,kimi-k2.6,pass,pass,8.43,"The model correctly identifies the primary action (cancel flight and notify zhangsan), all entities (Beijing, t+1am), an",Rule-based: all key entities and verbs found
+case2_negation,code,kimi-k2.6,pass,fail,14.27,"The model correctly identifies the main action (start hike and start cards indoor), the entities (hike, cards), the cons",missing constraints: ['true']
+case2_negation,json,kimi-k2.6,pass,pass,11.06,"The model correctly identifies the primary action (hike), the negation constraint (not raining at t+1), the alternative ",Rule-based: all key entities and verbs found
+case2_negation,natural,kimi-k2.6,error,fail,8.35,Judge error: timed out,missing constraints: ['true']
+case3_detail,code,kimi-k2.6,fail,pass,15.55,模型虽然正确识别了核心动作和部分实体参数，但它虚构了原文中不存在的条件（如'源文本为空'、'无法匹配特定风格'）以及替代方案和变体，这些内容超出了原始意图的范围。,Rule-based: all key entities and verbs found
+case3_detail,json,kimi-k2.6,pass,pass,9.94,模型正确识别了主要动作(!TRANSLATE)、源实体(fr_rev_bold)、目标实体(shakespeare_en)以及风格条件(archaic_heavy)，包括将其解读为重度古风的莎士比亚风格英语。,Rule-based: all key entities and verbs found
+case3_detail,natural,kimi-k2.6,pass,pass,6.83,The model response correctly identifies the main action as translating text styles and accurately captures the semantic ,Rule-based: all key entities and verbs found
+case5_tool_branch,code,kimi-k2.6,fail,pass,7.41,The model response incorrectly interprets the '>' operator as '包含/属于' (belongs to/is a subset of) instead of its standar,Rule-based: all key entities and verbs found
+case5_tool_branch,json,kimi-k2.6,pass,pass,12.68,模型正确识别了主要动作、实体、约束条件（包括操作符）和元指令的逻辑，且未反转否定逻辑，语义完全匹配。,Rule-based: all key entities and verbs found
+case5_tool_branch,natural,kimi-k2.6,pass,pass,10.23,"The model correctly identifies the main action as switching to 'indoor_activity', accurately interprets the constraint '",Rule-based: all key entities and verbs found
+case6_nested_constraint,code,kimi-k2.6,pass,fail,18.73,"The model correctly identifies the main action (booking a hotel), all entities (city=Shanghai, checkin=t+3, nights=2), a","missing entities: ['hotel', 'Shanghai']; missing constraints: ['downtown']"
+case6_nested_constraint,json,kimi-k2.6,pass,fail,6.62,模型正确识别了所有意图、实体（城市、入住时间、住宿时长）及约束条件（预算、评分、位置），且未遗漏或错误理解任何语义信息。,missing entities: ['Shanghai']
+case6_nested_constraint,natural,kimi-k2.6,pass,pass,7.03,"The model response correctly identifies the action (book hotel), all entities (Shanghai, t+3, 2 nights), and all constra",Rule-based: all key entities and verbs found
+case7_parallel_action,code,kimi-k2.6,pass,pass,11.74,模型正确识别了超时限制（30秒）、三个主要动作（获取、处理、邮件）及其对应的实体，且动作序列与IR中的顺序一致。,Rule-based: all key entities and verbs found
+case7_parallel_action,json,kimi-k2.6,pass,pass,7.55,模型响应正确识别了主要意图（获取数据）、所有实体（数据、结果、报告）、约束条件（30秒超时）以及操作顺序（获取->处理->邮件发送），且未反转任何否定逻辑或遗漏必要信息。,Rule-based: all key entities and verbs found
+case7_parallel_action,natural,kimi-k2.6,pass,pass,7.64,模型正确识别了30秒超时条件、按顺序执行获取数据、处理结果和邮件报告通知这三个动作,Rule-based: all key entities and verbs found
+case8_conditional_branch,code,kimi-k2.6,pass,pass,38.05,模型正确解析了条件判断（高紧急度且计费类别）、主要路由动作以及else分支中的技术支持路由和经理升级动作,Rule-based: all key entities and verbs found
+case8_conditional_branch,json,kimi-k2.6,pass,pass,5.95,模型正确识别了主要操作为!ROUTE/ticket，准确提取了紧急程度为高、类别为计费两个约束条件，且未遗漏或误判备选方案（路由到技术支持、升级给经理）及其顺序。,Rule-based: all key entities and verbs found
+case8_conditional_branch,natural,kimi-k2.6,fail,pass,9.02,模型错误地将 'otherwise' 分支理解为一个联合条件，即同时执行两个动作，而 IR 中的 `alternatives` 列表暗示了一个回退顺序或选择，并且响应在主要动作的描述中添加了 IR 中不存在的目标（'账单团队'）。,Rule-based: all key entities and verbs found
+case9_tool_call,code,kimi-k2.6,pass,pass,9.91,"The response correctly captures all semantic elements including the conditional logic, main action, entities, constraint",Rule-based: all key entities and verbs found
+case9_tool_call,json,kimi-k2.6,pass,pass,4.94,"The response correctly identifies the main action, all entities (restaurants, italian, Beijing, open_now), the rating co",Rule-based: all key entities and verbs found
+case9_tool_call,natural,kimi-k2.6,pass,pass,9.21,"The response accurately identifies the main action (search/suggest), all entities (restaurants, italian, Beijing, open_n",Rule-based: all key entities and verbs found
+case10_multi_turn,code,glm-5.2,pass,pass,9.73,"The model correctly identifies the main action (update), entities (order_42, address, 5_Tianhu_Ave), and constraints (au",Rule-based: all key entities and verbs found
+case10_multi_turn,json,glm-5.2,pass,pass,8.26,模型正确识别了核心动作（更新）、所有实体（订单42、地址字段、新值）、所有约束（用户已验证、状态不等于已发货）以及逻辑顺序。,Rule-based: all key entities and verbs found
+case10_multi_turn,natural,glm-5.2,pass,pass,8.75,模型正确识别了主要动作（更新）、所有实体（订单 order_42、字段 address、新值 5_Tianfu_Ave）以及所有约束条件（验证权限、状态不为已发货），并且未颠倒否定逻辑。,Rule-based: all key entities and verbs found
+case1_multi_constraint,code,glm-5.2,pass,pass,10.92,模型正确识别了核心意图（取消航班和发送邮件）、所有实体（我、北京、航班、zhangsan）、条件约束（时间t+1am和地理位置），以及顺序执行要求，未遗漏或误判任何语义要素。,Rule-based: all key entities and verbs found
+case1_multi_constraint,json,glm-5.2,pass,pass,13.24,"The response correctly identifies the main action (!CANCEL), entities (flight, email recipient zhangsan), and all constr",Rule-based: all key entities and verbs found
+case1_multi_constraint,natural,glm-5.2,pass,fail,7.87,模型正确识别了主要动作（取消航班、通知zhangsan）、实体（位置北京、时间t+1am、人员zhangsan）、约束条件（时间与位置的AND关系）以及否定逻辑（条件不满足时不执行操作）。,missing entities: ['flight']
+case2_negation,code,glm-5.2,pass,pass,10.85,"The model correctly identifies the main action as starting a hike, the condition as not raining at t+1, the alternative ",Rule-based: all key entities and verbs found
+case2_negation,json,glm-5.2,pass,fail,5.69,模型正确识别了核心动作“徒步”、约束条件“t+1不下雨”以及备选方案“室内玩纸牌”，所有实体和逻辑均与原始意图一致。,missing entities: ['hike']; missing alternatives: ['cards']
+case2_negation,natural,glm-5.2,pass,fail,8.05,模型正确识别了否定条件（不下雨）、主要动作（徒步）、备选动作（室内打牌）以及所有实体和时间约束。,missing constraints: ['true']
+case3_detail,code,glm-5.2,pass,pass,11.73,"The model correctly identifies the main action as translate, accurately captures all entities (src, tgt, style) with the",Rule-based: all key entities and verbs found
+case3_detail,json,glm-5.2,pass,pass,13.70,"The model correctly identifies the main action as translation, interprets the source entity 'fr_rev_bold' as a specific ",Rule-based: all key entities and verbs found
+case3_detail,natural,glm-5.2,fail,pass,15.86,"The model incorrectly interprets the source and target entities as a list of parallel styles to apply to the input, rath",Rule-based: all key entities and verbs found
+case5_tool_branch,code,glm-5.2,pass,pass,11.30,模型正确识别了触发条件（天气大于雨）、主要动作（切换到室内活动）以及实体和逻辑流程，未违反否定逻辑或遗漏约束。,Rule-based: all key entities and verbs found
+case5_tool_branch,json,glm-5.2,error,pass,8.56,Judge error: timed out,Rule-based: all key entities and verbs found
+case5_tool_branch,natural,glm-5.2,error,pass,9.09,Judge error: timed out,Rule-based: all key entities and verbs found
+case6_nested_constraint,code,glm-5.2,pass,pass,10.70,模型准确解析了所有实体（上海、3天后、2晚）、约束条件（预算≤500、评分≥4.0、市中心）及预订动作，且未翻转否定逻辑。,Rule-based: all key entities and verbs found
+case6_nested_constraint,json,glm-5.2,fail,pass,12.62,模型添加了未在IR中指定的建议操作（如放宽条件、邻近区域替代、确认筛选条件等），属于捏造额外指令。,Rule-based: all key entities and verbs found
+case6_nested_constraint,natural,glm-5.2,pass,fail,9.28,模型响应正确识别了预订酒店的主要动作、所有实体（上海、t+3、2）、所有约束条件（预算<=500、评分>=4.0、位置为市中心）及其逻辑关系，未遗漏或误读任何语义要素。,missing entities: ['hotel']
+case7_parallel_action,code,glm-5.2,fail,pass,8.63,The model incorrectly interprets the timeout constraint as a conditional trigger ('if timeout occurs') rather than a tem,Rule-based: all key entities and verbs found
+case7_parallel_action,json,glm-5.2,error,pass,11.53,Judge error: timed out,Rule-based: all key entities and verbs found
+case7_parallel_action,natural,glm-5.2,pass,pass,8.18,"The response correctly identifies the condition (timeout is 30s) and the sequence of actions (fetch data, process result",Rule-based: all key entities and verbs found
+case8_conditional_branch,code,glm-5.2,pass,pass,7.86,"The model correctly identifies the main action (route ticket), all constraints (urgency==high, category==billing), the n",Rule-based: all key entities and verbs found
+case8_conditional_branch,json,glm-5.2,pass,pass,11.79,"The response correctly identifies the primary action (!ROUTE/ticket), all constraints (urgency is high, category is bill",Rule-based: all key entities and verbs found
+case8_conditional_branch,natural,glm-5.2,pass,pass,7.22,模型正确识别了所有主要动作、实体、条件约束、否定逻辑（通过否则分支体现）以及顺序关系，语义意图与IR完全一致。,Rule-based: all key entities and verbs found
+case9_tool_call,code,glm-5.2,pass,pass,13.92,模型正确识别了主要动作（搜索、建议）、所有实体（餐厅、意大利菜、北京、营业中、配送选项）、约束条件（评分>=4.5）及分支逻辑，未遗漏或误读任何关键信息。,Rule-based: all key entities and verbs found
+case9_tool_call,json,glm-5.2,pass,pass,8.30,"The model correctly identifies the search action, all entities (Italian restaurants in Beijing), constraints (open now, ",Rule-based: all key entities and verbs found
+case9_tool_call,natural,glm-5.2,pass,pass,8.86,"The response correctly identifies the search action, all entities (Italian, Beijing, open_now), the rating constraint (>",Rule-based: all key entities and verbs found
