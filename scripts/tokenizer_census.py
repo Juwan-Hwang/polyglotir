@@ -291,7 +291,10 @@ def build_tokenizers(
 
     if include_hf:
         models = hf_models or [
-            ("meta-llama/Llama-2-7b-hf", "llama-2"),
+            # Open-access mirrors (originals are gated):
+            # - NousResearch/Llama-2-7b-hf  = same tokenizer as meta-llama/Llama-2-7b-hf
+            # - meta-llama/Meta-Llama-3-8B  = gated, so use open mirror
+            ("NousResearch/Llama-2-7b-hf", "llama-2"),
             ("Qwen/Qwen2.5-0.5B", "qwen2.5"),
         ]
         for model_name, display_name in models:
