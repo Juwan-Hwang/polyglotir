@@ -477,7 +477,7 @@ def generate_entropy_analysis() -> None:
         FIGURES_DIR.mkdir(parents=True, exist_ok=True)
 
         # ── Figure 1: zlib entropy vs success (Phase 2 only, no line) ─
-        fig, ax = plt.subplots(1, 1, figsize=(9, 7))
+        fig, ax = plt.subplots(1, 1, figsize=(10, 7))
 
         for fe in FRONTENDS:
             if fe not in stats:
@@ -488,7 +488,7 @@ def generate_entropy_analysis() -> None:
             ax.scatter(x, y, s=150, zorder=5, color="#2ecc71", edgecolors="black")
             ax.annotate(
                 fe, (x, y), textcoords="offset points",
-                xytext=(10, 5), fontsize=11, fontweight="bold",
+                xytext=(8, 4), fontsize=10, fontweight="bold",
             )
 
         # Annotate with correlation stats
@@ -501,27 +501,7 @@ def generate_entropy_analysis() -> None:
             bbox=dict(boxstyle="round,pad=0.3", facecolor="wheat", alpha=0.5),
         )
 
-        # Semantic compression sweep (separate colour, connected)
-        if comp_labels:
-            comp_pts = []
-            for fe in comp_labels:
-                if fe not in stats:
-                    continue
-                s = stats[fe]
-                comp_pts.append((s["zlib_entropy"], s["success_rate"] * 100, fe))
-            comp_pts.sort(key=lambda p: p[0])
-            if len(comp_pts) >= 2:
-                xs = [p[0] for p in comp_pts]
-                ys = [p[1] for p in comp_pts]
-                ax.plot(xs, ys, "s-", color="#3498db", markersize=7, linewidth=2,
-                        label="Semantic compression sweep", zorder=4)
-                for x, y, fe in comp_pts:
-                    ax.annotate(
-                        fe, (x, y), textcoords="offset points",
-                        xytext=(8, -10), fontsize=7, color="#3498db",
-                    )
-
-        # Noise robustness sweep (separate colour, clearly different)
+        # Noise robustness sweep — plotted as connected line with offset labels
         if noise_labels:
             noise_pts = []
             for fe in noise_labels:
@@ -533,13 +513,15 @@ def generate_entropy_analysis() -> None:
             if len(noise_pts) >= 2:
                 xs = [p[0] for p in noise_pts]
                 ys = [p[1] for p in noise_pts]
-                ax.plot(xs, ys, "D--", color="#e74c3c", markersize=7, linewidth=1.5,
+                ax.plot(xs, ys, "D--", color="#e74c3c", markersize=6, linewidth=1.5,
                         label="Noise robustness (NOT compression)", zorder=3)
-                for x, y, fe in noise_pts:
-                    ax.annotate(
-                        fe, (x, y), textcoords="offset points",
-                        xytext=(8, -10), fontsize=7, color="#e74c3c",
-                    )
+                # Stagger labels vertically to avoid overlap
+                _offsets = [(10, 12), (10, -12), (10, 8), (10, -8), (10, 4), (10, -4), (10, 0)]
+                for idx, (x, y, fe) in enumerate(noise_pts):
+                    ox, oy = _offsets[idx % len(_offsets)]
+                    ax.annotate(fe, (x, y), textcoords="offset points",
+                                xytext=(ox, oy), fontsize=6, color="#e74c3c",
+                                arrowprops=dict(arrowstyle="-", color="#e74c3c", lw=0.5))
 
         ax.set_xlabel("DEFLATE Entropy (bits/char)", fontsize=12)
         ax.set_ylabel("Success Rate (%)", fontsize=12)
@@ -553,9 +535,10 @@ def generate_entropy_analysis() -> None:
         ax.grid(True, alpha=0.3)
 
         fig.tight_layout()
-        fig_path = FIGURES_DIR / "entropy_curve.png"
-        fig.savefig(fig_path, dpi=150)
-        print(f"  Figure: {fig_path}", file=sys.stderr)
+        for _ext in ("png", "pdf"):
+            _p = FIGURES_DIR / f"entropy_curve.{_ext}"
+            fig.savefig(_p, dpi=300, bbox_inches="tight")
+            print(f"  Figure: {_p}", file=sys.stderr)
 
         # ── Figure 2: metric comparison bar chart ──────────────────
         fig2, ax2 = plt.subplots(1, 1, figsize=(10, 6))

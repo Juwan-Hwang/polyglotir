@@ -139,18 +139,24 @@ def fig_spearman_scatter() -> None:
     data = json.loads(json_path.read_text(encoding="utf-8"))
     pairs = data["pairs"]
 
-    labels = [f"{p['model_a']}\nvs\n{p['model_b']}" for p in pairs]
+    # Shorten model names for y-axis labels to avoid 3-line overlap
+    _short = {"deepseek-v3.2": "DS-v3.2", "glm-5.2": "GLM-5.2",
+              "kimi-k2.6": "Kimi-K2.6", "longcat-2.0": "LongCat-2",
+              "minimax-m2.7": "MiniMax-M2.7"}
+    labels = [f"{_short.get(p['model_a'], p['model_a'])} vs {_short.get(p['model_b'], p['model_b'])}"
+              for p in pairs]
     rhos = [p["spearman_rho"] for p in pairs]
 
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(8, 5.5))  # taller for 10 pairs
     colors = ["#15803d" if r >= 0.6 else "#ca8a04" if r >= 0.4 else "#dc2626" for r in rhos]
-    bars = ax.barh(range(len(rhos)), rhos, color=colors, edgecolor="white", height=0.6)
+    bars = ax.barh(range(len(rhos)), rhos, color=colors, edgecolor="white", height=0.55)
 
     for i, (bar, rho) in enumerate(zip(bars, rhos)):
         ax.text(rho + 0.01, i, f"ρ={rho:.3f}", va="center", fontsize=9)
 
     ax.set_yticks(range(len(labels)))
-    ax.set_yticklabels(labels, fontsize=9)
+    ax.set_yticklabels(labels, fontsize=8.5)
+    ax.set_ylim(-0.5, len(labels) - 0.5)
     ax.set_xlabel("Spearman ρ")
     ax.set_xlim(0, 1.1)
     ax.axvline(x=0.5, color="gray", linestyle="--", alpha=0.5, label="ρ=0.5")
@@ -255,18 +261,21 @@ def fig_case_level_heatmap() -> None:
     n_cases = len(cases)
     n_models = len(models)
 
-    fig, axes = plt.subplots(1, n_fe, figsize=(3.5 * n_fe, 5), sharey=True)
-    if n_fe == 1:
-        axes = [axes]
+    # Use 2-row layout: 3 on top, 2 on bottom (no empty 6th subplot)
+    n_cols = 3
+    n_rows = 2
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5.5 * n_cols, 5 * n_rows),
+                            sharey=True)
+    # Hide the unused 6th subplot
+    axes.flat[5].set_visible(False)
 
     for ax_idx, fe in enumerate(frontends):
-        ax = axes[ax_idx]
+        ax = axes.flat[ax_idx]
         matrix = np.zeros((n_cases, n_models))
         for i, case_id in enumerate(cases):
             for j, model in enumerate(models):
                 for r in rows:
                     if r["case_id"] == case_id and r["model"] == model and r["frontend"] == fe:
-                        # llm_verdict or judge_verdict
                         verdict = r.get("llm_verdict", "").strip()
                         if verdict == "pass":
                             matrix[i, j] = 1
@@ -277,22 +286,22 @@ def fig_case_level_heatmap() -> None:
         cmap = mcolors.ListedColormap(["#fca5a5", "#86efac"])
         ax.imshow(matrix, cmap=cmap, vmin=0, vmax=1, aspect="auto")
 
-        # Annotate
+        # Annotate — use small symbols to avoid overlap in tight cells
         for i in range(n_cases):
             for j in range(n_models):
                 symbol = "✓" if matrix[i, j] else "✗"
                 color = "#15803d" if matrix[i, j] else "#dc2626"
-                ax.text(j, i, symbol, ha="center", va="center", fontsize=12, color=color)
+                ax.text(j, i, symbol, ha="center", va="center", fontsize=7, fontweight="bold", color=color)
 
         ax.set_xticks(range(n_models))
-        ax.set_xticklabels(models, rotation=45, ha="right", fontsize=8)
-        if ax_idx == 0:
+        ax.set_xticklabels(models, rotation=45, ha="right", fontsize=7)
+        if ax_idx % n_cols == 0:
             ax.set_yticks(range(n_cases))
-            ax.set_yticklabels(cases, fontsize=8)
-        ax.set_title(FE_LABELS.get(fe, fe), fontsize=11)
+            ax.set_yticklabels(cases, fontsize=6)
+        ax.set_title(FE_LABELS.get(fe, fe), fontsize=10)
 
-    fig.suptitle("Phase 2: Case-Level Pass/Fail Grid (✓ = pass, ✗ = fail)", fontsize=13, y=1.02)
-    plt.tight_layout()
+    fig.suptitle("Phase 2: Case-Level Pass/Fail Grid (✓ = pass, ✗ = fail)", fontsize=11, y=1.005)
+    plt.tight_layout(h_pad=3.0)
     _save(fig, "fig5_case_level_grid")
 
 

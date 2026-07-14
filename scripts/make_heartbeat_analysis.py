@@ -64,12 +64,12 @@ MODEL_COLORS = {
 
 N_VALUES = [1, 5, 10, 15, 20, 9999]
 N_LABELS = {
-    1: "N=1\n(stateless)",
+    1: "N=1",
     5: "N=5",
-    10: "N=10",
-    15: "N=15",
-    20: "N=20",
-    9999: "N=∞\n(no heartbeat)",
+   10: "N=10",
+   15: "N=15",
+   20: "N=20",
+   9999: "N=∞",
 }
 
 
@@ -215,10 +215,10 @@ def fig_error_propagation(data: dict[str, list[dict]]) -> None:
 
 def fig_n_overall(data: dict[str, list[dict]]) -> None:
     """Overall pass rate by N value — bar chart grouped by model."""
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(14, 6))
 
     x = np.arange(len(N_VALUES))
-    width = 0.25
+    width = 0.22
 
     for i, slug in enumerate(MODEL_SLUGS):
         results = data[slug]
@@ -232,17 +232,21 @@ def fig_n_overall(data: dict[str, list[dict]]) -> None:
                       color=MODEL_COLORS[slug], label=MODEL_LABELS[slug],
                       edgecolor="white")
 
+        # Put label INSIDE the bar (white text) to avoid horizontal overlap
         for bar, val in zip(bars, rates):
-            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.5,
-                    f"{val:.1f}%", ha="center", va="bottom",
-                    fontsize=9, fontweight="bold")
+            y_pos = bar.get_height() - 3 if bar.get_height() > 15 else bar.get_height() + 1
+            y_va = "top" if bar.get_height() > 15 else "bottom"
+            txt_color = "white" if bar.get_height() > 15 else "black"
+            ax.text(bar.get_x() + bar.get_width() / 2, y_pos,
+                    f"{val:.1f}%", ha="center", va=y_va,
+                    fontsize=7, fontweight="bold", color=txt_color)
 
     ax.set_xticks(x + width)
-    ax.set_xticklabels([N_LABELS[n] for n in N_VALUES], fontsize=9)
+    ax.set_xticklabels([N_LABELS[n] for n in N_VALUES], fontsize=9, rotation=0)
     ax.set_ylabel("Pass Rate (%)")
     ax.set_title("Phase 3: Overall Pass Rate by Heartbeat N Value")
     ax.legend(loc="lower right")
-    ax.set_ylim(0, 100)
+    ax.set_ylim(0, 105)
     ax.grid(True, alpha=0.3, axis="y")
 
     _save(fig, "fig_heartbeat_n_overall")
@@ -253,15 +257,16 @@ def fig_n_overall(data: dict[str, list[dict]]) -> None:
 def fig_turn_heatmap(data: dict[str, list[dict]]) -> None:
     """N × turn pass-rate heatmap, one per model."""
     n_models = len(MODEL_SLUGS)
-    fig, axes = plt.subplots(1, n_models, figsize=(5 * n_models, 5),
+    # Use 1 row × 3 cols, taller figure for breathing room
+    fig, axes = plt.subplots(1, n_models, figsize=(6 * n_models, 4.5),
                              sharey=True)
     if n_models == 1:
-        axes = [axes]
+        axes = np.array([axes])
 
     turns = list(range(15))
 
     for ax_idx, slug in enumerate(MODEL_SLUGS):
-        ax = axes[ax_idx]
+        ax = axes.flat[ax_idx]
         results = data[slug]
         matrix = np.zeros((len(N_VALUES), len(turns)))
 
@@ -281,21 +286,20 @@ def fig_turn_heatmap(data: dict[str, list[dict]]) -> None:
                 val = matrix[i, j]
                 color = "white" if val > 70 or val < 20 else "black"
                 ax.text(j, i, f"{val:.0f}", ha="center", va="center",
-                        fontsize=8, fontweight="bold", color=color)
+                        fontsize=6.5, fontweight="bold", color=color)
 
         ax.set_xticks(range(len(turns)))
-        ax.set_xticklabels(turns, fontsize=9)
+        ax.set_xticklabels(turns, fontsize=7)
         ax.set_xlabel("Turn")
         if ax_idx == 0:
             ax.set_yticks(range(len(N_VALUES)))
-            ax.set_yticklabels([N_LABELS[n].replace("\n", " ") for n in N_VALUES],
-                               fontsize=9)
+            ax.set_yticklabels([N_LABELS[n] for n in N_VALUES], fontsize=8)
         ax.set_title(MODEL_LABELS[slug])
 
     cbar = fig.colorbar(im, ax=axes, shrink=0.8, pad=0.02)
     cbar.set_label("Pass Rate (%)")
     fig.suptitle("Phase 3: Per-Turn Pass Rate Heatmap (N × Turn)",
-                 fontsize=13, y=1.02)
+                 fontsize=12, y=1.01)
 
     _save(fig, "fig_heartbeat_turn_heatmap")
 
