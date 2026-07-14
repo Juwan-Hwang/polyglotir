@@ -1,80 +1,105 @@
 # SILP — Semantic Interlingua Layer Protocol
 
-> *A black-box text-interface payload codec; it does NOT access or manipulate
-> model-internal latent representations. It is a protocol layer for
-> model-to-model communication, not a prompt compression tool — designed for
-> honest, auditable agent-to-agent communication.*
+> *A black-box, text-interface payload codec for cross-model agent communication. SILP does not access or manipulate model-internal latent representations. It is a protocol layer, not a prompt compression tool — designed for honest, auditable agent-to-agent communication.*
 
-SILP provides a candidate semantic payload layer for MCP/A2A messages.
-The core hypothesis under test: **shared syntax prior > shared vocabulary prior**
-— code/structured-grammar encoding transmits intent across models more reliably
-than natural-language vocabulary.
+**Paper**: [arXiv preprint (coming soon)](https://arxiv.org) · **Code**: This repository · **Data**: All raw experimental data included
 
-## 快速开始 (Windows)
+## What is SILP?
+
+SILP (Semantic Interlingua Layer Protocol) provides a candidate semantic payload layer for MCP/A2A messages, where payload encoding is not yet standardized. It compiles a coarse-grained action-slot intermediate representation (IR) into multiple pluggable surface frontends — code-like function-call syntax, pure JSON, natural language, and ML-compressed text — each designed to exploit the shared training priors of contemporary LLMs.
+
+### Key Finding
+
+The central hypothesis predicted that **shared syntactic priors** (code-format familiarity) contribute more to cross-model comprehension than **shared vocabulary priors** (word-level semantics). Our ablation results **contradict** this prediction: removing semantic vocabulary caused a **2.8× larger performance drop** than shuffling syntactic order (85.2 vs. 30.8 percentage points), though both perturbations produced statistically significant effects.
+
+## Quick Start
 
 ```powershell
-# 1. 创建虚拟环境
+# 1. Create virtual environment
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
-# 2. 安装 CPU 版 torch（必须先装，单独装）
+# 2. Install CPU-only PyTorch (must be installed separately)
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 
-# 3. 安装项目（开发模式 + 全部依赖）
+# 3. Install the project (development mode + all dependencies)
 pip install -e ".[ml,api,analysis,dev]"
 
-# 4. 运行测试
+# 4. Run tests
 pytest
 
-# 5. 试用 CLI
+# 5. Try the CLI
 silpc frontends
 silpc validate examples/case1.json
 silpc compile examples/case1.json -f code
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 polyglotir/
 ├── src/silp/
-│   ├── ir/            # 第1层：语义 IR（Schema + Validator）
-│   ├── frontend/      # 第2层：插拔式多前端（代码/数学/知识引用/自然语言）
-│   ├── negotiation/   # 第3层：元协议（握手/会话/错误码）
-│   ├── bench/         # 第4-5层：优化层 + 迁移筛选层
-│   └── cli/           # silpc 命令行工具
-├── scripts/           # 实验脚本（分词器普查、smoke test 等）
-├── tests/             # 测试套件
-├── data/              # 论文数据（详见 data/README.md）
-└── docs/              # 文档
+│   ├── ir/            # Layer 1: Semantic IR (Schema + Validator)
+│   ├── frontend/      # Layer 2: Pluggable frontends (code/JSON/natural/...)
+│   ├── negotiation/   # Layer 3: Meta-protocol (handshake/session/errors)
+│   └── bench/         # Layers 4-5: Optimization + Migration screening
+├── scripts/           # Experiment scripts (tokenizer census, benchmarks, etc.)
+├── tests/             # Test suite
+├── data/              # Experimental data (raw + processed + figures)
+├── latex/             # LaTeX source for the paper
+└── paper.md           # Paper manuscript (Markdown source)
 ```
 
-## 五层协议栈
+## Five-Layer Protocol Stack
 
-| 层 | 模块 | 作用 |
-|---|---|---|
-| 1 应用层 | `silp.ir` | 语义 IR（JSON Schema 任务槽位） |
-| 2 表面层 | `silp.frontend` | 插拔式多前端（代码默认） |
-| 3 元协议层 | `silp.negotiation` | 动态握手、状态管理、错误回退 |
-| 4 优化层 | `silp.bench` | 适应度函数 + GA 自动进化 |
-| 5 迁移筛选层 | `silp.bench` | 小模型→闭源模型排序保持 |
+| Layer | Module | Description |
+|-------|--------|-------------|
+| 1. Application | `silp.ir` | Semantic IR (JSON-serialized action-slot structure) |
+| 2. Surface | `silp.frontend` | Pluggable frontends: code, JSON, natural, nl_json, llmlingua2 |
+| 3. Meta-protocol | `silp.negotiation` | Dynamic frontend negotiation, session management, error codes |
+| 4. Optimization | `silp.bench` | Multi-objective fitness function + genetic algorithm evolution |
+| 5. Migration | `silp.bench` | Small-model → large-model ranking preservation screening |
 
-## 实施路线（18 周）
+## Experimental Phases
 
-| 阶段 | 周期 | 核心交付 |
-|---|---|---|
-| 0 | 1–2 周 | 本地小模型 + 跨分词器普查 + 任务集 |
-| 0.5 | 1 周 | Smoke Test + compile.lock 冻结 → 判定门 |
-| 1 | 3–4 周 | 原语白名单 + Validator + MVP |
-| 2 | 5–8 周 | **通用性基准矩阵**（前端×模型，含闭源） |
-| 3 | 9–12 周 | 权衡曲线 + 剥离实验 + 人类可读性 |
-| 4 | 13–18 周 | 自动进化 + 协商 + 跨语言 |
+| Phase | Duration | Key Deliverable |
+|-------|----------|-----------------|
+| 0 | Weeks 1–2 | Cross-tokenizer census + task design (27 cases × 9 categories) |
+| 0.5 | Week 3 | Smoke test + compile.lock physical freezing → go/no-go gate |
+| 1 | Weeks 4–7 | Primitive whitelist + Validator + MVP round-trip |
+| 2 | Weeks 8–12 | **Generalizability benchmark matrix** (5 frontends × 5 models × 27 cases = 675 runs) |
+| 3 | Weeks 13–18 | Ablation + entropy analysis + heartbeat (2,160 multi-turn runs) |
+| 4 | Future | Automatic evolution + negotiation + cross-language |
 
-## 红线
+## Results Summary
 
-- **不是压缩工具** — 与 LLMLingua 区别在协议层非压缩层
-- **绝不沾越狱** — 仅承载正常任务
-- **所有编码可经 `silpc` 无损解码** — 无不可追溯隐写
+- **Code frontend**: 85.9% average pass rate (highest), statistically tied with JSON (84.4%) and natural language (83.0%)
+- **Ablation**: Skeleton (vocabulary removed) collapses to 1.2%; Shuffled (order disrupted) retains 55.6%
+- **Compression**: LLMLingua-2 (rate=0.5) achieves 45.8% compression but only 25.9% pass rate
+- **Multi-turn**: No statistically significant error propagation across 15 turns (Fisher exact test, p ≥ 0.10)
+- **Total**: 3,159 model invocations across 4 phases
 
-## 许可证
+## Design Principles
 
-MIT
+- **Not a compression tool** — SILP is a protocol layer; compression is a side effect, not the goal
+- **No jailbreak content** — Only carries legitimate task instructions
+- **All encodings are losslessly decodable** via `silpc` — no untraceable steganography
+- **No model-internal access** — Pure text interface, black-box
+
+## Citation
+
+If you use SILP in your research, please cite:
+
+```bibtex
+@misc{hwang2026silp,
+  title={SILP: A Semantic Interlingua Layer Protocol for Cross-Model Agent Communication},
+  author={Juwan Hwang(黄治文)},
+  year={2026},
+  eprint={arXiv:XXXX.XXXXX},
+  archivePrefix={arXiv}
+}
+```
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.
