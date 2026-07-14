@@ -1,33 +1,47 @@
+# SILP .gitignore
+
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
 *.egg-info/
 dist/
 build/
 .eggs/
 
-# Virtual env
-.venv/
+# Virtual environments
 venv/
+.venv/
 env/
 
 # IDE
 .vscode/
 .idea/
-
-# Environment secrets
-.env
-.env.local
+*.swp
+*.swo
 
 # OS
-Thumbs.db
 .DS_Store
+Thumbs.db
+desktop.ini
 
-# Large raw model outputs (use external storage or git-LFS for scale)
-# Keep small Phase 0.5 outputs in git; gitignore only bulk runs
-data/raw/**/*.bin
-data/raw/**/*.pt
-data/raw/**/*.safetensors
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# SILP compile lock (artifacts)
+.silp/compile.lock
+
+# Large files (keep under repo limit)
+docs/conversation_transcript.txt
+
+# pytest
+.pytest_cache/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Data: keep processed data, ignore nothing in data/ except backups
+data/raw/phase3_heartbeat_backup_810/
