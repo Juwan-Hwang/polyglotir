@@ -148,7 +148,7 @@ def fig_spearman_scatter() -> None:
     rhos = [p["spearman_rho"] for p in pairs]
 
     fig, ax = plt.subplots(figsize=(8, 5.5))  # taller for 10 pairs
-    colors = ["#15803d" if r >= 0.6 else "#ca8a04" if r >= 0.4 else "#dc2626" for r in rhos]
+    colors = ["#15803d" if r >= 0.45 else "#ca8a04" if r >= 0.25 else "#dc2626" for r in rhos]
     bars = ax.barh(range(len(rhos)), rhos, color=colors, edgecolor="white", height=0.55)
 
     for i, (bar, rho) in enumerate(zip(bars, rhos)):
@@ -158,9 +158,9 @@ def fig_spearman_scatter() -> None:
     ax.set_yticklabels(labels, fontsize=8.5)
     ax.set_ylim(-0.5, len(labels) - 0.5)
     ax.set_xlabel("Spearman ρ")
-    ax.set_xlim(0, 1.1)
+    ax.set_xlim(0, 0.7)
     ax.axvline(x=0.5, color="gray", linestyle="--", alpha=0.5, label="ρ=0.5")
-    ax.set_title("Phase 2: Pairwise Spearman Rank Correlation (per-case, 45 points)")
+    ax.set_title("Phase 2: Pairwise Spearman Rank Correlation (per-case-per-frontend, n=135)")
     ax.legend(loc="lower right")
     ax.invert_yaxis()
 

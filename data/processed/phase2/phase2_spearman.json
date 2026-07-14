@@ -1,9 +1,15 @@
 {
+  "n_models": 5,
+  "n_frontends": 5,
+  "n_cases": 27,
+  "n_data_points": 135,
+  "method": "scipy.stats.spearmanr (Pearson correlation of ranks, handles ties correctly)",
   "pairs": [
     {
       "model_a": "deepseek-v3.2",
       "model_b": "glm-5.2",
-      "spearman_rho": 0.621,
+      "spearman_rho": 0.4106,
+      "spearman_p": "7.554868e-07",
       "n_data_points": 135,
       "rates_a": {
         "code": 0.7778,
@@ -23,7 +29,8 @@
     {
       "model_a": "deepseek-v3.2",
       "model_b": "kimi-k2.6",
-      "spearman_rho": 0.4655,
+      "spearman_rho": 0.1831,
+      "spearman_p": "3.353063e-02",
       "n_data_points": 135,
       "rates_a": {
         "code": 0.7778,
@@ -37,13 +44,14 @@
         "json": 0.8519,
         "llmlingua2": 0.4074,
         "natural": 0.8148,
-        "nl_json": 0.6296
+        "nl_json": 0.5926
       }
     },
     {
       "model_a": "deepseek-v3.2",
       "model_b": "longcat-2.0",
-      "spearman_rho": 0.6252,
+      "spearman_rho": 0.4391,
+      "spearman_p": "9.939285e-08",
       "n_data_points": 135,
       "rates_a": {
         "code": 0.7778,
@@ -56,14 +64,15 @@
         "code": 0.8148,
         "json": 0.8519,
         "llmlingua2": 0.1481,
-        "natural": 0.8148,
+        "natural": 0.7778,
         "nl_json": 0.7037
       }
     },
     {
       "model_a": "deepseek-v3.2",
       "model_b": "minimax-m2.7",
-      "spearman_rho": 0.5629,
+      "spearman_rho": 0.309,
+      "spearman_p": "2.653520e-04",
       "n_data_points": 135,
       "rates_a": {
         "code": 0.7778,
@@ -74,7 +83,7 @@
       },
       "rates_b": {
         "code": 0.8889,
-        "json": 0.8889,
+        "json": 0.8519,
         "llmlingua2": 0.3333,
         "natural": 0.8148,
         "nl_json": 0.7407
@@ -83,7 +92,8 @@
     {
       "model_a": "glm-5.2",
       "model_b": "kimi-k2.6",
-      "spearman_rho": 0.6131,
+      "spearman_rho": 0.3444,
+      "spearman_p": "4.302912e-05",
       "n_data_points": 135,
       "rates_a": {
         "code": 1.0,
@@ -97,13 +107,14 @@
         "json": 0.8519,
         "llmlingua2": 0.4074,
         "natural": 0.8148,
-        "nl_json": 0.6296
+        "nl_json": 0.5926
       }
     },
     {
       "model_a": "glm-5.2",
       "model_b": "longcat-2.0",
-      "spearman_rho": 0.7193,
+      "spearman_rho": 0.5376,
+      "spearman_p": "1.778584e-11",
       "n_data_points": 135,
       "rates_a": {
         "code": 1.0,
@@ -116,14 +127,15 @@
         "code": 0.8148,
         "json": 0.8519,
         "llmlingua2": 0.1481,
-        "natural": 0.8148,
+        "natural": 0.7778,
         "nl_json": 0.7037
       }
     },
     {
       "model_a": "glm-5.2",
       "model_b": "minimax-m2.7",
-      "spearman_rho": 0.6778,
+      "spearman_rho": 0.4323,
+      "spearman_p": "1.644150e-07",
       "n_data_points": 135,
       "rates_a": {
         "code": 1.0,
@@ -134,7 +146,7 @@
       },
       "rates_b": {
         "code": 0.8889,
-        "json": 0.8889,
+        "json": 0.8519,
         "llmlingua2": 0.3333,
         "natural": 0.8148,
         "nl_json": 0.7407
@@ -143,38 +155,40 @@
     {
       "model_a": "kimi-k2.6",
       "model_b": "longcat-2.0",
-      "spearman_rho": 0.5687,
+      "spearman_rho": 0.3069,
+      "spearman_p": "2.942963e-04",
       "n_data_points": 135,
       "rates_a": {
         "code": 0.8148,
         "json": 0.8519,
         "llmlingua2": 0.4074,
         "natural": 0.8148,
-        "nl_json": 0.6296
+        "nl_json": 0.5926
       },
       "rates_b": {
         "code": 0.8148,
         "json": 0.8519,
         "llmlingua2": 0.1481,
-        "natural": 0.8148,
+        "natural": 0.7778,
         "nl_json": 0.7037
       }
     },
     {
       "model_a": "kimi-k2.6",
       "model_b": "minimax-m2.7",
-      "spearman_rho": 0.6013,
+      "spearman_rho": 0.3526,
+      "spearman_p": "2.742151e-05",
       "n_data_points": 135,
       "rates_a": {
         "code": 0.8148,
         "json": 0.8519,
         "llmlingua2": 0.4074,
         "natural": 0.8148,
-        "nl_json": 0.6296
+        "nl_json": 0.5926
       },
       "rates_b": {
         "code": 0.8889,
-        "json": 0.8889,
+        "json": 0.8519,
         "llmlingua2": 0.3333,
         "natural": 0.8148,
         "nl_json": 0.7407
@@ -183,27 +197,23 @@
     {
       "model_a": "longcat-2.0",
       "model_b": "minimax-m2.7",
-      "spearman_rho": 0.6844,
+      "spearman_rho": 0.4693,
+      "spearman_p": "9.415907e-09",
       "n_data_points": 135,
       "rates_a": {
         "code": 0.8148,
         "json": 0.8519,
         "llmlingua2": 0.1481,
-        "natural": 0.8148,
+        "natural": 0.7778,
         "nl_json": 0.7037
       },
       "rates_b": {
         "code": 0.8889,
-        "json": 0.8889,
+        "json": 0.8519,
         "llmlingua2": 0.3333,
         "natural": 0.8148,
         "nl_json": 0.7407
       }
     }
-  ],
-  "n_data_points": 135,
-  "n_models": 5,
-  "n_frontends": 5,
-  "valid": true,
-  "note": "Spearman valid (135 points, threshold=30)"
+  ]
 }

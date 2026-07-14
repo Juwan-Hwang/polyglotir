@@ -45,3 +45,9 @@ docs/conversation_transcript.txt
 
 # Data: keep processed data, ignore nothing in data/ except backups
 data/raw/phase3_heartbeat_backup_810/
+
+# Paper (not tracked; managed outside repo)
+paper.md
+
+# Temporary verification/debug scripts
+scripts/_*.py
