@@ -123,6 +123,10 @@ We evaluate SILP through four main phases and an intermediate smoke-test subphas
 
 
 
+\textbf{Learned message representation.} A concurrent line of work asks a complementary question: rather than testing \emph{why} certain representations succeed, OPTiMACS \citep{gupta2026learning} frames message-format selection for agentic communication as a reinforcement-learning problem, learning task-conditional optimal formats (JSON, propositions, code, etc.) via an Expanding Markov Decision Process. This approach can adaptively select formats per-task but requires online policy learning and does not isolate \emph{which} component of a representation---its vocabulary or its syntax---drives comprehension. SILP instead operates zero-shot and provides a mechanistic decomposition (\S4.5) of this question, which is orthogonal to OPTiMACS's format-selection objective; the two approaches could in principle be composed.
+
+
+
 \textbf{Emergent communication.} The emergent communication literature \citep{havrylov2017emergence, lazaridou2017multiagent} studies how agents develop shared signaling systems from scratch, typically through reinforcement learning. SILP differs by leveraging \emph{pre-existing} shared priors from pretraining---no learning is needed. Agents use code-like syntax they have already seen millions of times in training data, making communication zero-shot and immediately interpretable.
 
 
@@ -132,6 +136,10 @@ We evaluate SILP through four main phases and an intermediate smoke-test subphas
 
 
 \textbf{Agent communication protocols.} MCP \citep{anthropic2024mcp} and A2A \citep{google2024a2a} define transport-level and capability-discovery semantics but do not standardize payload encoding. SILP is designed as a payload-layer option within these frameworks---it sits inside MCP's \texttt{params} or A2A's \texttt{task/message/artifact} fields without replacing their lifecycle management.
+
+
+
+\textbf{Agent network architectures.} At a more macro architectural level, \citet{zhang2026agentnetwork} propose a vision for open multi-agent connectivity centered on a ``dual narrow-waist'' design, in which the Task Semantic Intermediate Representation (TSIR) serves as a semantic waist for circulating task intent---conceptually analogous to SILP's Layer 1 IR. The authors explicitly note that theirs is a position paper: ``we do not present a complete protocol specification or a performance evaluation.'' SILP complements this direction by providing a concrete, implemented, and empirically validated instantiation of a semantic-waist-like layer, including a compile/decode-guaranteed codec, a negotiation mechanism, and quantitative evidence (via ablation) on what drives cross-model comprehension at the payload level.
 
 
 
