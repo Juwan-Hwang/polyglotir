@@ -1,8 +1,11 @@
 # SILP — Semantic Interlingua Layer Protocol
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21396850.svg)](https://zenodo.org/doi/10.5281/zenodo.21396850)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > *A black-box, text-interface payload codec for cross-model agent communication. SILP does not access or manipulate model-internal latent representations. It is a protocol layer, not a prompt compression tool — designed for honest, auditable agent-to-agent communication.*
 
-**Paper**: [arXiv preprint (coming soon)](https://arxiv.org) · **Code**: This repository · **Data**: All raw experimental data included
+**Paper**: [Zenodo](https://zenodo.org/doi/10.5281/zenodo.21396850) · **Code**: This repository · **Data**: All raw experimental data included
 
 ## What is SILP?
 
@@ -47,7 +50,7 @@ polyglotir/
 ├── tests/             # Test suite
 ├── data/              # Experimental data (raw + processed + figures)
 ├── latex/             # LaTeX source for the paper
-└── paper.md           # Paper manuscript (Markdown source)
+└── examples/          # Example IR files
 ```
 
 ## Five-Layer Protocol Stack
@@ -91,12 +94,16 @@ polyglotir/
 If you use SILP in your research, please cite:
 
 ```bibtex
-@misc{hwang2026silp,
-  title={SILP: A Semantic Interlingua Layer Protocol for Cross-Model Agent Communication},
-  author={Juwan Hwang(黄治文)},
-  year={2026},
-  eprint={arXiv:XXXX.XXXXX},
-  archivePrefix={arXiv}
+@misc{https://doi.org/10.5281/zenodo.21396850,
+  doi = {10.5281/ZENODO.21396850},
+  url = {https://zenodo.org/doi/10.5281/zenodo.21396850},
+  author = {Hwang, Juwan},
+  keywords = {LLM, agent communication, protocol, interlingua, prompt compression},
+  language = {en},
+  title = {SILP : A SEMANTIC INTERLINGUA LAYER PROTOCOL FOR CROSS-MODEL AGENT COMMUNICATION},
+  publisher = {Zenodo},
+  year = {2026},
+  copyright = {Creative Commons Attribution 4.0 International}
 }
 ```
 

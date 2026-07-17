@@ -14,6 +14,7 @@
 \usepackage{natbib}
 \usepackage{array}
 \usepackage{multirow}
+\usepackage{float}
 \usepackage{CJKutf8}
 
 \graphicspath{{figs/}{.}}
@@ -634,7 +635,7 @@ JSON & 2.230 & 84.4\% \\
 
 
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \small
 \caption{McNemar pairwise comparisons (n=135 paired observations per pair). $\chi^2$ computed with continuity correction $(|b-c|-1)^2/(b+c)$. Discordant pairs: b (A pass, B fail) and c (A fail, B pass). The three top frontends (code, JSON, natural) are pairwise indistinguishable. All comparisons involving NL+JSON or LLMLingua-2 are significant.}
@@ -661,7 +662,7 @@ NL+JSON vs.~LLMLingua2 & 67.4\% & 25.9\% & 38.78 & \textless0.001 & Yes \\
 
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{fig5_case_level_grid}
 \caption{Case $\times$ model pass/fail grid. Each cell is a binary pass (green) / fail (red) for one case under one frontend $\times$ model combination. The grid reveals that failures cluster on specific case types: negation logic (case 2 variants), conditional branching (case 7 variants), and multi-argument search (case 8 variants) are the most challenging across all frontends.}
@@ -709,7 +710,7 @@ To probe sensitivity to syntactic order and semantic vocabulary, we transform ea
 
 
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \small
 \caption{Ablation pass rates. The skeleton condition (syntax preserved, vocabulary removed) nearly completely collapses to 1.2\%, while the shuffled condition (vocabulary preserved, syntax destroyed) retains 55.6\%.}
@@ -766,7 +767,7 @@ Statistical significance: McNemar's test confirms significant differences betwee
 
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{ablation_by_type}
 \caption{Ablation pass rates by case category. The skeleton condition (blue) is near-zero across all categories except \texttt{tool\_branch} (11\%). The shuffled condition (orange) shows high variance: \texttt{multi\_turn} and \texttt{detail} retain 100\% and 78\% respectively (likely because word reordering is less destructive for simple instructions), while \texttt{conditional\_branch} and \texttt{parallel\_action} collapse to 11\% (syntax order is critical for these categories).}
@@ -775,7 +776,7 @@ Statistical significance: McNemar's test confirms significant differences betwee
 
 
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \small
 \caption{Ablation by case category (n=9 per cell). The \texttt{conditional\_branch} and \texttt{parallel\_action} categories are most syntax-dependent (shuffled drops to 11\%), while \texttt{multi\_turn} is least affected by shuffling (100\%), likely because stateful update instructions are short and word-order-invariant.}
@@ -813,7 +814,7 @@ We initially attempted character-frequency entropy (monogram and bigram entropy)
 
 
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \small
 \caption{DEFLATE entropy vs.~pass rate (n=135 per frontend). JSON has the lowest entropy (6.08 bits/char) due to highly repetitive structural tokens, while LLMLingua-2 has the highest (8.20) due to aggressive compression removing redundancy.}
@@ -892,7 +893,7 @@ We tested whether a failure on turn \emph{t} increases the probability of failur
 
 
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \small
 \caption{Error propagation analysis (Fisher exact test, two-sided). OR = odds ratio; CI = Woolf confidence interval. All three models' 95\% CIs cross 1.0, failing to reject the null hypothesis of no error propagation.}
@@ -908,7 +909,7 @@ Kimi & 9.0\% & 4.3\% & 0.46 (0.11--1.96) & 0.411 \\
 \end{table}
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{fig_heartbeat_error_propagation}
 \caption{Error propagation comparison. For each model, the bar on the left shows P(fail \textbar{} previous turn passed) and the bar on the right shows P(fail \textbar{} previous turn failed). Error bars represent 95\% confidence intervals. The overlapping CIs indicate no significant error propagation effect.}
@@ -929,7 +930,7 @@ We tested whether pass rate or latency changes with context depth (number of pre
 
 
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \small
 \caption{Spearman's $\rho$ between pass rate/latency and context depth (n=15 distinct context-depth levels, 0--14). No pass-rate trend is significant (all p > 0.2). Latency trends are significant for DeepSeek ($\rho$=+0.900, p = 0.000005) and GLM ($\rho$=+0.829, p = 0.000135), confirming expected context-length-induced latency increase. Kimi shows no significant latency trend ($\rho$=+0.375, p = 0.168).}
@@ -945,7 +946,7 @@ Kimi & +0.195 & 0.486 & +0.375 & 0.168 \\
 \end{table}
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{fig_heartbeat_passrate_by_context}
 \caption{Pass rate vs.~context depth. No systematic degradation pattern was detected across context depths 0--14 for all three models.}
@@ -954,7 +955,7 @@ Kimi & +0.195 & 0.486 & +0.375 & 0.168 \\
 
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{fig_heartbeat_latency}
 \caption{Latency vs.~context depth. DeepSeek and GLM show steep latency increases ($\rho$ $\geq$ 0.83, p < 0.001), while Kimi's trend is non-significant.}
@@ -967,7 +968,7 @@ Kimi & +0.195 & 0.486 & +0.375 & 0.168 \\
 
 
 
-\begin{table}[ht]
+\begin{table}[H]
 \centering
 \small
 \caption{Pass rates by N value (n=120 per cell, 8 seeds $\times$ 15 turns). No systematic pattern of degradation with increasing N is observed. GLM and Kimi remain stable at 86--93\% across all N values. DeepSeek shows non-monotonic variation (76.7--87.5\%) but no downward trend.}
@@ -983,7 +984,7 @@ Kimi & 90.0\% & 92.5\% & 90.8\% & 92.5\% & 89.2\% & 92.5\% \\
 \end{table}
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{fig_heartbeat_n_overall}
 \caption{Overall pass rates by N value. No monotonic relationship between heartbeat interval N and pass rate was observed.}
@@ -992,7 +993,7 @@ Kimi & 90.0\% & 92.5\% & 90.8\% & 92.5\% & 89.2\% & 92.5\% \\
 
 
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.9\textwidth]{fig_heartbeat_turn_heatmap}
 \caption{N $\times$ turn pass-rate heatmap. The heatmap shows no systematic ``darkening'' (failure clustering) in later turns.}
@@ -1325,6 +1326,7 @@ Table 13 & \S4.7 & N-value overall pass rates \\
 
 
 
+\clearpage
 \small
 \bibliographystyle{unsrtnat}
 \bibliography{references}
