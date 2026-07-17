@@ -1,6 +1,6 @@
 # SILP — Semantic Interlingua Layer Protocol
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21396850.svg)](https://zenodo.org/doi/10.5281/zenodo.21396850)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21396850-blue)](https://zenodo.org/doi/10.5281/zenodo.21396850)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > *A black-box, text-interface payload codec for cross-model agent communication. SILP does not access or manipulate model-internal latent representations. It is a protocol layer, not a prompt compression tool — designed for honest, auditable agent-to-agent communication.*
