@@ -24,7 +24,8 @@ are checked for spurious meanings in general corpus (e.g. ``escalate`` →
 
 Census data source: ``data/processed/phase0/tokenizer_census_verbs.csv``
 Tokenizers tested: gpt-4o (o200k_base), gpt-3.5 (cl100k_base),
-llama-2 (NousResearch/Llama-2-7b-hf), qwen2.5 (Qwen/Qwen2.5-0.5B).
+llama-2 (NousResearch/Llama-2-7b-hf), qwen2.5 (Qwen/Qwen2.5-0.5B),
+claude (custom), and gemini (SentencePiece).
 
 Usage::
 
@@ -226,12 +227,23 @@ _REGISTRY: list[VerbEntry] = [
         subword_analysis="Single token — no sub-word fragments.",
         status="approved",
     ),
+    VerbEntry(
+        verb="NOTIFY",
+        fn_name="notify",
+        single_token_all=True,
+        token_counts={"gpt-4o": 1, "gpt-3.5": 1, "llama-2": 1, "qwen2.5": 1, "claude": 1, "gemini": 1},
+        code_corpus="medium",
+        general_corpus="high",
+        protocol_unambiguous=True,
+        subword_analysis="Single token — no sub-word fragments.",
+        status="approved",
+    ),
     # ── EXCLUDED: multi-token in at least one tokenizer ─────────────
     VerbEntry(
         verb="SWITCH_TOOL",
         fn_name="switch_tool",
         single_token_all=False,
-        token_counts={"gpt-4o": 2, "gpt-3.5": 2, "llama-2": 3, "qwen2.5": 2},
+        token_counts={"gpt-4o": 2, "gpt-3.5": 2, "llama-2": 3, "qwen2.5": 2, "claude": 3, "gemini": 3},
         code_corpus="medium",
         general_corpus="medium",
         protocol_unambiguous=True,
@@ -248,7 +260,7 @@ _REGISTRY: list[VerbEntry] = [
         verb="ESCALATE",
         fn_name="escalate",
         single_token_all=False,
-        token_counts={"gpt-4o": 3, "gpt-3.5": 2, "llama-2": 3, "qwen2.5": 2},
+        token_counts={"gpt-4o": 3, "gpt-3.5": 2, "llama-2": 3, "qwen2.5": 2, "claude": 3, "gemini": 2},
         code_corpus="low",
         general_corpus="medium",
         protocol_unambiguous=True,

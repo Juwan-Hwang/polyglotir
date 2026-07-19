@@ -1,11 +1,12 @@
 # SILP — Semantic Interlingua Layer Protocol
 
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21396850-blue)](https://zenodo.org/doi/10.5281/zenodo.21396850)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21396849-blue)](https://doi.org/10.5281/zenodo.21396849)
+[![IETF Draft](https://img.shields.io/badge/IETF-draft--hwang--silp--protocol--00-blue)](https://datatracker.ietf.org/doc/draft-hwang-silp-protocol/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > *A black-box, text-interface payload codec for cross-model agent communication. SILP does not access or manipulate model-internal latent representations. It is a protocol layer, not a prompt compression tool — designed for honest, auditable agent-to-agent communication.*
 
-**Paper**: [Zenodo](https://zenodo.org/doi/10.5281/zenodo.21396850) · **Code**: This repository · **Data**: All raw experimental data included
+**Paper**: [Zenodo](https://doi.org/10.5281/zenodo.21396849) · **IETF Draft**: [datatracker](https://datatracker.ietf.org/doc/draft-hwang-silp-protocol/) · **Code**: This repository · **Data**: All raw experimental data included
 
 ## What is SILP?
 
@@ -50,6 +51,7 @@ polyglotir/
 ├── tests/             # Test suite
 ├── data/              # Experimental data (raw + processed + figures)
 ├── latex/             # LaTeX source for the paper
+├── ietf-draft/        # IETF Internet-Draft source (XML + text + HTML)
 └── examples/          # Example IR files
 ```
 
@@ -89,14 +91,25 @@ polyglotir/
 - **All encodings are losslessly decodable** via `silpc` — no untraceable steganography
 - **No model-internal access** — Pure text interface, black-box
 
+## IETF Internet-Draft
+
+This project's protocol specification has been submitted as an IETF
+Internet-Draft (Informational, Independent Submission):
+
+- **Draft**: [draft-hwang-silp-protocol-00](https://datatracker.ietf.org/doc/draft-hwang-silp-protocol/)
+- **Status**: Active (submitted 2026-07-18)
+- **Source files**: see [`ietf-draft/`](./ietf-draft/) folder
+
+The draft formally specifies the SILP protocol described in this repository.
+
 ## Citation
 
 If you use SILP in your research, please cite:
 
 ```bibtex
-@misc{https://doi.org/10.5281/zenodo.21396850,
-  doi = {10.5281/ZENODO.21396850},
-  url = {https://zenodo.org/doi/10.5281/zenodo.21396850},
+@misc{https://doi.org/10.5281/zenodo.21396849,
+  doi = {10.5281/ZENODO.21396849},
+  url = {https://doi.org/10.5281/zenodo.21396849},
   author = {Hwang, Juwan},
   keywords = {LLM, agent communication, protocol, interlingua, prompt compression},
   language = {en},
