@@ -99,6 +99,7 @@ Internet-Draft (Informational, Independent Submission):
 - **Draft**: [draft-hwang-silp-protocol-00](https://datatracker.ietf.org/doc/draft-hwang-silp-protocol/)
 - **Status**: Active (submitted 2026-07-18)
 - **Source files**: see [`ietf-draft/`](./ietf-draft/) folder
+- **Community discussion**: introduced on the IETF `agent2agent` mailing list, which discusses standardization of AI agent communication protocols -- [see thread](https://mailarchive.ietf.org/arch/msg/agent2agent/qRDDvKJ4Cmu64xawdoQ9y645tSc/)
 
 The draft formally specifies the SILP protocol described in this repository.
 
