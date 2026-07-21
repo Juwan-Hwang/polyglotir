@@ -1,0 +1,4005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="Common,Latin" name="scripts">
+<meta content="initial-scale=1.0" name="viewport">
+<title>Semantic Interlingua Layer Protocol (SILP): A Payload Codec for Cross-Model Agent Communication</title>
+<meta content="Juwan Hwang" name="author">
+<meta content="
+       
+
+        This document specifies the Semantic Interlingua Layer Protocol (SILP),
+
+        a black-box, text-interface payload codec designed for cross-model
+
+        agent-to-agent communication. SILP defines a coarse-grained action-slot
+
+        intermediate representation (IR) as the reference semantic layer and
+
+        compiles it into multiple pluggable surface frontends -- code-like
+
+        function-call syntax, pure JSON, natural language, and ML-compressed
+
+        text. SILP is designed as a payload-layer option within existing agent
+
+        transport protocols such as the Model Context Protocol (MCP) and
+
+        Agent-to-Agent (A2A) protocol, which define transport envelopes and
+
+        capability discovery but leave payload encoding unspecified.
+
+       
+       
+
+        SILP provides compile/decode round-trip guarantees for lossless
+
+        frontends, dynamic frontend negotiation via probe messages, session
+
+        management with heartbeat renewal, and a verb whitelist verified
+
+        across six production tokenizers for cross-model token-level stability.
+
+       
+       
+
+        This document is a product of independent research and is not an IETF
+
+        standard. It is published as an Informational document to establish a
+
+        stable reference for implementers.
+
+       
+    " name="description">
+<meta content="xml2rfc 3.34.0" name="generator">
+<meta content="LLM" name="keyword">
+<meta content="agent communication" name="keyword">
+<meta content="protocol" name="keyword">
+<meta content="interlingua" name="keyword">
+<meta content="prompt compression" name="keyword">
+<meta content="MCP" name="keyword">
+<meta content="A2A" name="keyword">
+<meta content="draft-hwang-silp-protocol-03" name="ietf.draft">
+<!-- Generator version information:
+  xml2rfc 3.34.0
+    Python 3.12.8
+    ConfigArgParse 1.7.5
+    google-i18n-address 3.1.1
+    intervaltree 3.2.1
+    Jinja2 3.1.6
+    lxml 6.1.1
+    natsort 8.4.0
+    platformdirs 4.10.1
+    pycountry 26.2.16
+    PyYAML 6.0.3
+    requests 2.34.2
+    wcwidth 0.8.2
+-->
+<link href="draft-hwang-silp-protocol-03.xml" rel="alternate" type="application/rfc+xml">
+<link href="#copyright" rel="license">
+<style type="text/css">/*
+
+  NOTE: Changes at the bottom of this file overrides some earlier settings.
+
+  Once the style has stabilized and has been adopted as an official RFC style,
+  this can be consolidated so that style settings occur only in one place, but
+  for now the contents of this file consists first of the initial CSS work as
+  provided to the RFC Formatter (xml2rfc) work, followed by itemized and
+  commented changes found necessary during the development of the v3
+  formatters.
+
+*/
+
+/* fonts */
+@import url('https://static.ietf.org/fonts/noto-sans/import.css'); /* Sans-serif */
+@import url('https://static.ietf.org/fonts/noto-serif/import.css'); /* Serif (print) */
+@import url('https://static.ietf.org/fonts/roboto-mono/import.css'); /* Monospace */
+
+:root {
+  --font-sans: 'Noto Sans', Arial, Helvetica, sans-serif;
+  --font-serif: 'Noto Serif', 'Times', 'Times New Roman', serif;
+  --font-mono: 'Roboto Mono', Courier, 'Courier New', monospace;
+}
+
+@viewport {
+  zoom: 1.0;
+}
+@-ms-viewport {
+  width: extend-to-zoom;
+  zoom: 1.0;
+}
+/* general and mobile first */
+html {
+}
+body {
+  max-width: 90%;
+  margin: 1.5em auto;
+  color: #222;
+  background-color: #fff;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  scroll-behavior: smooth;
+  overflow-wrap: break-word;
+}
+.ears {
+  display: none;
+}
+
+/* headings */
+#title, h1, h2, h3, h4, h5, h6 {
+  margin: 1em 0 0.5em;
+  font-weight: bold;
+  line-height: 1.3;
+}
+#title {
+  clear: both;
+  border-bottom: 1px solid #ddd;
+  margin: 0 0 0.5em 0;
+  padding: 1em 0 0.5em;
+}
+.author {
+  padding-bottom: 4px;
+}
+h1 {
+  font-size: 26px;
+  margin: 1em 0;
+}
+h2 {
+  font-size: 22px;
+  margin-top: -20px;  /* provide offset for in-page anchors */
+  padding-top: 33px;
+}
+h3 {
+  font-size: 18px;
+  margin-top: -36px;  /* provide offset for in-page anchors */
+  padding-top: 42px;
+}
+h4 {
+  font-size: 16px;
+  margin-top: -36px;  /* provide offset for in-page anchors */
+  padding-top: 42px;
+}
+h5, h6 {
+  font-size: 14px;
+}
+#n-copyright-notice {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 1em;
+  margin-bottom: 1em;
+}
+/* general structure */
+p {
+  padding: 0;
+  margin: 0 0 1em 0;
+  text-align: left;
+}
+div, span {
+  position: relative;
+}
+div {
+  margin: 0;
+}
+.alignRight.art-text {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 3px;
+  padding: 1em 1em 0;
+  margin-bottom: 1.5em;
+}
+.alignRight.art-text pre {
+  padding: 0;
+}
+.alignRight {
+  margin: 1em 0;
+}
+.alignRight > *:first-child {
+  border: none;
+  margin: 0;
+  float: right;
+  clear: both;
+}
+.alignRight > *:nth-child(2) {
+  clear: both;
+  display: block;
+  border: none;
+}
+svg {
+  display: block;
+}
+@media print {
+  svg {
+    max-height: 850px;
+    max-width: 660px;
+  }
+}
+svg[font-family~="serif" i], svg [font-family~="serif" i] {
+  font-family: var(--font-serif);
+}
+svg[font-family~="sans-serif" i], svg [font-family~="sans-serif" i] {
+  font-family: var(--font-sans);
+}
+svg[font-family~="monospace" i], svg [font-family~="monospace" i] {
+  font-family: var(--font-mono);
+}
+.alignCenter.art-text {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 3px;
+  padding: 1em 1em 0;
+  margin-bottom: 1.5em;
+}
+.alignCenter.art-text pre {
+  padding: 0;
+}
+.alignCenter {
+  margin: 1em 0;
+}
+.alignCenter > *:first-child {
+  display: table;
+  border: none;
+  margin: 0 auto;
+}
+
+/* lists */
+ol, ul {
+  padding: 0;
+  margin: 0 0 1em 2em;
+}
+ol ol, ul ul, ol ul, ul ol {
+  margin-left: 1em;
+}
+li {
+  margin: 0 0 0.25em 0;
+}
+.ulCompact li {
+  margin: 0;
+}
+ul.empty, .ulEmpty {
+  list-style-type: none;
+}
+ul.empty li, .ulEmpty li {
+  margin-top: 0.5em;
+}
+ul.ulBare, li.ulBare {
+  margin-left: 0em !important;
+}
+ul.compact, .ulCompact,
+ol.compact, .olCompact {
+  line-height: 100%;
+  margin: 0 0 0 2em;
+}
+
+/* definition lists */
+dl {
+}
+dl > dt {
+  float: left;
+  margin-right: 1em;
+}
+/* 
+dl.nohang > dt {
+  float: none;
+}
+*/
+dl > dd {
+  margin-bottom: .8em;
+  min-height: 1.3em;
+}
+dl.compact > dd, .dlCompact > dd {
+  margin-bottom: 0em;
+}
+dl > dd > dl {
+  margin-top: 0.5em;
+  margin-bottom: 0em;
+}
+
+/* links */
+a {
+  text-decoration: none;
+}
+a[href] {
+  color: #22e; /* Arlen: WCAG 2019 */
+}
+a[href]:hover {
+  background-color: #f2f2f2;
+}
+figcaption a[href],
+a[href].selfRef {
+  color: #222;
+}
+/* XXX probably not this:
+a.selfRef:hover {
+  background-color: transparent;
+  cursor: default;
+} */
+
+/* Figures */
+tt, code, pre {
+  background-color: #f9f9f9;
+  font-family: var(--font-mono);
+}
+pre {
+  border: 1px solid #eee;
+  margin: 0;
+  padding: 1em;
+}
+img {
+  max-width: 100%;
+}
+figure {
+  margin: 0;
+}
+figure blockquote {
+  margin: 0.8em 0.4em 0.4em;
+}
+figcaption {
+  font-style: italic;
+  margin: 0 0 1em 0;
+}
+@media screen {
+  pre {
+    overflow-x: auto;
+    max-width: 100%;
+    max-width: calc(100% - 22px);
+  }
+}
+
+/* aside, blockquote */
+aside, blockquote {
+  margin-left: 0;
+  padding: 1.2em 2em;
+}
+blockquote {
+  background-color: #f9f9f9;
+  color: #111; /* Arlen: WCAG 2019 */
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  margin: 1em 0;
+}
+blockquote > *:last-child {
+  margin-bottom: 0;
+}
+cite {
+  display: block;
+  text-align: right;
+  font-style: italic;
+}
+.xref {
+  overflow-wrap: normal;
+}
+
+/* tables */
+table {
+  width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  border: 1px solid #eee;
+}
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5em 0.75em;
+}
+th {
+  text-align: left;
+  background-color: #e9e9e9;
+}
+tr:nth-child(2n+1) > td {
+  background-color: #f5f5f5;
+}
+table caption {
+  font-style: italic;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+table p {
+  /* XXX to avoid bottom margin on table row signifiers. If paragraphs should
+     be allowed within tables more generally, it would be far better to select on a class. */
+  margin: 0;
+}
+
+/* pilcrow */
+a.pilcrow {
+  color: #666; /* Arlen: AHDJ 2019 */
+  text-decoration: none;
+  visibility: hidden;
+  user-select: none;
+  -ms-user-select: none;
+  -o-user-select:none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+@media screen {
+  aside:hover > a.pilcrow,
+  p:hover > a.pilcrow,
+  blockquote:hover > a.pilcrow,
+  div:hover > a.pilcrow,
+  li:hover > a.pilcrow,
+  pre:hover > a.pilcrow {
+    visibility: visible;
+  }
+  a.pilcrow:hover {
+    background-color: transparent;
+  }
+}
+
+/* misc */
+hr {
+  border: 0;
+  border-top: 1px solid #eee;
+}
+.bcp14 {
+  font-variant: small-caps;
+}
+
+.role {
+  font-variant: all-small-caps;
+}
+
+/* info block */
+#identifiers {
+  margin: 0;
+  font-size: 0.9em;
+}
+#identifiers dt {
+  width: 3em;
+  clear: left;
+}
+#identifiers dd {
+  float: left;
+  margin-bottom: 0;
+}
+/* Fix PDF info block run off issue */
+@media print {
+  #identifiers dd {
+    max-width: 100%;
+  }
+}
+#identifiers .authors .author {
+  display: inline-block;
+  margin-right: 1.5em;
+}
+#identifiers .authors .org {
+  font-style: italic;
+}
+
+/* The prepared/rendered info at the very bottom of the page */
+.docInfo {
+  color: #666; /* Arlen: WCAG 2019 */
+  font-size: 0.9em;
+  font-style: italic;
+  margin-top: 2em;
+}
+.docInfo .prepared {
+  float: left;
+}
+.docInfo .prepared {
+  float: right;
+}
+
+/* table of contents */
+#toc  {
+  padding: 0.75em 0 2em 0;
+  margin-bottom: 1em;
+}
+nav.toc ul {
+  margin: 0 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+nav.toc li {
+  line-height: 1.3em;
+  margin: 0.75em 0;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+/* references */
+.references dt {
+  text-align: right;
+  font-weight: bold;
+  min-width: 7em;
+}
+.references dd {
+  margin-left: 8em;
+  overflow: auto;
+}
+
+.refInstance {
+  margin-bottom: 1.25em;
+}
+
+.refSubseries {
+  margin-bottom: 1.25em;
+}
+
+.references .ascii {
+  margin-bottom: 0.25em;
+}
+
+/* index */
+.index ul {
+  margin: 0 0 0 1em;
+  padding: 0;
+  list-style: none;
+}
+.index ul ul {
+  margin: 0;
+}
+.index li {
+  margin: 0;
+  text-indent: -2em;
+  padding-left: 2em;
+  padding-bottom: 5px;
+}
+.indexIndex {
+  margin: 0.5em 0 1em;
+}
+.index a {
+  font-weight: 700;
+}
+/* make the index two-column on all but the smallest screens */
+@media (min-width: 600px) {
+  .index ul {
+    -moz-column-count: 2;
+    -moz-column-gap: 20px;
+  }
+  .index ul ul {
+    -moz-column-count: 1;
+    -moz-column-gap: 0;
+  }
+}
+
+/* authors */
+address.vcard {
+  font-style: normal;
+  margin: 1em 0;
+}
+
+address.vcard .nameRole {
+  font-weight: 700;
+  margin-left: 0;
+}
+address.vcard .label {
+  font-family: var(--font-sans);
+  margin: 0.5em 0;
+}
+address.vcard .type {
+  display: none;
+}
+.alternative-contact {
+  margin: 1.5em 0 1em;
+}
+hr.addr {
+  border-top: 1px dashed;
+  margin: 0;
+  color: #ddd;
+  max-width: calc(100% - 16px);
+}
+
+/* temporary notes */
+.rfcEditorRemove::before {
+  position: absolute;
+  top: 0.2em;
+  right: 0.2em;
+  padding: 0.2em;
+  content: "The RFC Editor will remove this note";
+  color: #9e2a00; /* Arlen: WCAG 2019 */
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+}
+.rfcEditorRemove {
+  position: relative;
+  padding-top: 1.8em;
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+  border-radius: 3px;
+}
+.cref {
+  background-color: #ffd; /* Arlen: WCAG 2019 */
+  padding: 2px 4px;
+}
+.crefSource {
+  font-style: italic;
+}
+/* alternative layout for smaller screens */
+@media screen and (max-width: 1023px) {
+  body {
+    padding-top: 2em;
+  }
+  #title {
+    padding: 1em 0;
+  }
+  h1 {
+    font-size: 24px;
+  }
+  h2 {
+    font-size: 20px;
+    margin-top: -18px;  /* provide offset for in-page anchors */
+    padding-top: 38px;
+  }
+  #identifiers dd {
+    max-width: 60%;
+  }
+  #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    padding: 0;
+    margin: 0;
+    background-color: inherit;
+    border-bottom: 1px solid #ccc;
+  }
+  #toc h2 {
+    margin: -1px 0 0 0;
+    padding: 4px 0 4px 6px;
+    padding-right: 1em;
+    min-width: 190px;
+    font-size: 1.1em;
+    text-align: right;
+    background-color: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #toc h2::before { /* css hamburger */
+    float: right;
+    position: relative;
+    width: 1em;
+    height: 1px;
+    left: -164px;
+    margin: 6px 0 0 0;
+    background: white none repeat scroll 0 0;
+    box-shadow: 0 4px 0 0 white, 0 8px 0 0 white;
+    content: "";
+  }
+  #toc nav {
+    display: none;
+    padding: 0.5em 1em 1em;
+    overflow: auto;
+    height: calc(100vh - 48px);
+    border-left: 1px solid #ddd;
+  }
+}
+
+/* alternative layout for wide screens */
+@media screen and (min-width: 1024px) {
+  body {
+    max-width: 724px;
+    margin: 42px auto;
+    padding-left: 1.5em;
+    padding-right: 29em;
+  }
+  #toc {
+    position: fixed;
+    top: 42px;
+    right: 42px;
+    width: 25%;
+    margin: 0;
+    padding: 0 1em;
+    z-index: 1;
+  }
+  #toc h2 {
+    border-top: none;
+    border-bottom: 1px solid #ddd;
+    font-size: 1em;
+    font-weight: normal;
+    margin: 0;
+    padding: 0.25em 1em 1em 0;
+  }
+  #toc nav {
+    display: block;
+    height: calc(90vh - 84px);
+    bottom: 0;
+    padding: 0.5em 0 0;
+    overflow: auto;
+  }
+  img { /* future proofing */
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* pagination */
+@media print {
+  body {
+    width: 100%;
+  }
+  p {
+    orphans: 3;
+    widows: 3;
+  }
+  #n-copyright-notice {
+    border-bottom: none;
+  }
+  #toc, #n-introduction {
+    page-break-before: always;
+  }
+  #toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  figure, pre {
+    page-break-inside: avoid;
+  }
+  figure {
+    overflow: scroll;
+  }
+  .breakable pre {
+    break-inside: auto;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+  }
+  h2+*, h3+*, h4+*, h5+*, h6+* {
+    page-break-before: avoid;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 10pt;
+  }
+  table {
+    border: 1px solid #ddd;
+  }
+  td {
+    border-top: 1px solid #ddd;
+  }
+}
+
+/* This is commented out here, as the string-set: doesn't
+   pass W3C validation currently */
+/*
+.ears thead .left {
+  string-set: ears-top-left content();
+}
+
+.ears thead .center {
+  string-set: ears-top-center content();
+}
+
+.ears thead .right {
+  string-set: ears-top-right content();
+}
+
+.ears tfoot .left {
+  string-set: ears-bottom-left content();
+}
+
+.ears tfoot .center {
+  string-set: ears-bottom-center content();
+}
+
+.ears tfoot .right {
+  string-set: ears-bottom-right content();
+}
+*/
+
+@page :first {
+  padding-top: 0;
+  @top-left {
+    content: normal;
+    border: none;
+  }
+  @top-center {
+    content: normal;
+    border: none;
+  }
+  @top-right {
+    content: normal;
+    border: none;
+  }
+}
+
+@page {
+  size: A4;
+  margin-bottom: 45mm;
+  padding-top: 20px;
+  /* The following is commented out here, but set appropriately by in code, as
+     the content depends on the document */
+  /*
+  @top-left {
+    content: 'Internet-Draft';
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-left {
+    content: string(ears-top-left);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-center {
+    content: string(ears-top-center);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @top-right {
+    content: string(ears-top-right);
+    vertical-align: bottom;
+    border-bottom: solid 1px #ccc;
+  }
+  @bottom-left {
+    content: string(ears-bottom-left);
+    vertical-align: top;
+    border-top: solid 1px #ccc;
+  }
+  @bottom-center {
+    content: string(ears-bottom-center);
+    vertical-align: top;
+    border-top: solid 1px #ccc;
+  }
+  @bottom-right {
+      content: '[Page ' counter(page) ']';
+      vertical-align: top;
+      border-top: solid 1px #ccc;
+  }
+  */
+
+}
+
+/* Changes introduced to fix issues found during implementation */
+/* Make sure links are clickable even if overlapped by following H* */
+a {
+  z-index: 2;
+}
+/* Separate body from document info even without intervening H1 */
+section {
+  clear: both;
+}
+
+
+/* Top align author divs, to avoid names without organization dropping level with org names */
+.author {
+  vertical-align: top;
+}
+
+/* Leave room in document info to show Internet-Draft on one line */
+#identifiers dt {
+  width: 8em;
+}
+
+/* Don't waste quite as much whitespace between label and value in doc info */
+#identifiers dd {
+  margin-left: 1em;
+}
+
+/* Give floating toc a background color (needed when it's a div inside section */
+#toc {
+  background-color: white;
+}
+
+/* Make the collapsed ToC header render white on gray also when it's a link */
+@media screen and (max-width: 1023px) {
+  #toc h2 a,
+  #toc h2 a:link,
+  #toc h2 a:focus,
+  #toc h2 a:hover,
+  #toc a.toplink,
+  #toc a.toplink:hover {
+    color: white;
+    background-color: #444;
+    text-decoration: none;
+  }
+}
+
+/* Give the bottom of the ToC some whitespace */
+@media screen and (min-width: 1024px) {
+  #toc {
+    padding: 0 0 1em 1em;
+  }
+}
+
+/* Style section numbers with more space between number and title */
+.section-number {
+  padding-right: 0.5em;
+}
+
+/* prevent monospace from becoming overly large */
+tt, code, pre {
+  font-size: 95%;
+}
+
+/* Fix the height/width aspect for ascii art*/
+.sourcecode pre,
+.art-text pre {
+  line-height: 1.12;
+}
+
+
+/* Add styling for a link in the ToC that points to the top of the document */
+a.toplink {
+  float: right;
+  margin-right: 0.5em;
+}
+
+/* Fix the dl styling to match the RFC 7992 attributes */
+dl > dt,
+dl.dlParallel > dt {
+  float: left;
+  margin-right: 1em;
+}
+dl.dlNewline > dt {
+  float: none;
+}
+
+/* Provide styling for table cell text alignment */
+table td.text-left,
+table th.text-left {
+  text-align: left;
+}
+table td.text-center,
+table th.text-center {
+  text-align: center;
+}
+table td.text-right,
+table th.text-right {
+  text-align: right;
+}
+
+/* Make the alternative author contact information look less like just another
+   author, and group it closer with the primary author contact information */
+.alternative-contact {
+  margin: 0.5em 0 0.25em 0;
+}
+address .non-ascii {
+  margin: 0 0 0 2em;
+}
+
+/* With it being possible to set tables with alignment
+  left, center, and right, { width: 100%; } does not make sense */
+table {
+  width: auto;
+}
+
+/* Avoid reference text that sits in a block with very wide left margin,
+   because of a long floating dt label.*/
+.references dd {
+  overflow: visible;
+}
+
+/* Control caption placement */
+caption {
+  caption-side: bottom;
+}
+
+/* Limit the width of the author address vcard, so names in right-to-left
+   script don't end up on the other side of the page. */
+
+address.vcard {
+  max-width: 30em;
+  margin-right: auto;
+}
+
+/* For address alignment dependent on LTR or RTL scripts */
+address div.left {
+  text-align: left;
+}
+address div.right {
+  text-align: right;
+}
+
+/* Provide table alignment support.  We can't use the alignX classes above
+   since they do unwanted things with caption and other styling. */
+table.right {
+ margin-left: auto;
+ margin-right: 0;
+}
+table.center {
+ margin-left: auto;
+ margin-right: auto;
+}
+table.left {
+ margin-left: 0;
+ margin-right: auto;
+}
+
+/* Give the table caption label the same styling as the figcaption */
+caption a[href] {
+  color: #222;
+}
+
+@media print {
+  .toplink {
+    display: none;
+  }
+
+  /* avoid overwriting the top border line with the ToC header */
+  #toc {
+    padding-top: 1px;
+  }
+
+  /* Avoid page breaks inside dl and author address entries */
+  .vcard {
+    page-break-inside: avoid;
+  }
+
+}
+/* Tweak the bcp14 keyword presentation */
+.bcp14 {
+  font-variant: small-caps;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+/* Tweak the invisible space above H* in order not to overlay links in text above */
+ h2 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 31px;
+ }
+ h3 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 24px;
+ }
+ h4 {
+  margin-top: -18px;  /* provide offset for in-page anchors */
+  padding-top: 24px;
+ }
+/* Float artwork pilcrow to the right */
+@media screen {
+  .artwork a.pilcrow {
+    display: block;
+    line-height: 0.7;
+    margin-top: 0.15em;
+  }
+}
+/* Make pilcrows on dd visible */
+@media screen {
+  dd:hover > a.pilcrow {
+    visibility: visible;
+  }
+}
+/* Make the placement of figcaption match that of a table's caption
+   by removing the figure's added bottom margin */
+.alignLeft.art-text,
+.alignCenter.art-text,
+.alignRight.art-text {
+   margin-bottom: 0;
+}
+.alignLeft,
+.alignCenter,
+.alignRight {
+  margin: 1em 0 0 0;
+}
+/* In print, the pilcrow won't show on hover, so prevent it from taking up space,
+   possibly even requiring a new line */
+@media print {
+  a.pilcrow {
+    display: none;
+  }
+}
+/* Styling for the external metadata */
+div#external-metadata {
+  background-color: #eee;
+  padding: 0.5em;
+  margin-bottom: 0.5em;
+  display: none;
+}
+div#internal-metadata {
+  padding: 0.5em;                       /* to match the external-metadata padding */
+}
+/* Styling for title RFC Number */
+h1#rfcnum {
+  clear: both;
+  margin: 0 0 -1em;
+  padding: 1em 0 0 0;
+}
+/* Make .olPercent look the same as <ol><li> */
+dl.olPercent > dd {
+  margin-bottom: 0.25em;
+  min-height: initial;
+}
+/* Give aside some styling to set it apart */
+aside {
+  border-left: 1px solid #ddd;
+  margin: 1em 0 1em 2em;
+  padding: 0.2em 2em;
+}
+aside > dl,
+aside > ol,
+aside > ul,
+aside > table,
+aside > p {
+  margin-bottom: 0.5em;
+}
+/* Additional page break settings */
+@media print {
+  figcaption, table caption {
+    page-break-before: avoid;
+  }
+}
+/* Font size adjustments for print */
+@media print {
+  body  { font-size: 10pt;      line-height: normal; max-width: 96%; }
+  h1    { font-size: 1.72em;    padding-top: 1.5em; } /* 1*1.2*1.2*1.2 */
+  h2    { font-size: 1.44em;    padding-top: 1.5em; } /* 1*1.2*1.2 */
+  h3    { font-size: 1.2em;     padding-top: 1.5em; } /* 1*1.2 */
+  h4    { font-size: 1em;       padding-top: 1.5em; }
+  h5, h6 { font-size: 1em;      margin: initial; padding: 0.5em 0 0.3em; }
+}
+/* Sourcecode margin in print, when there's no pilcrow */
+@media print {
+  .artwork,
+  .artwork > pre,
+  .sourcecode {
+    margin-bottom: 1em;
+  }
+}
+/* Avoid narrow tables forcing too narrow table captions, which may render badly */
+table {
+  min-width: 20em;
+}
+/* ol type a */
+ol.type-a { list-style-type: lower-alpha; }
+ol.type-A { list-style-type: upper-alpha; }
+ol.type-i { list-style-type: lower-roman; }
+ol.type-I { list-style-type: upper-roman; }
+/* Apply the print table and row borders in general, on request from the RPC,
+and increase the contrast between border and odd row background slightly */
+table {
+  border: 1px solid #ddd;
+}
+td {
+  border-top: 1px solid #ddd;
+}
+tr {
+  break-inside: avoid;
+}
+tr:nth-child(2n+1) > td {
+  background-color: #f8f8f8;
+}
+/* Use style rules to govern display of the TOC. */
+@media screen and (max-width: 1023px) {
+  #toc nav { display: none; }
+  #toc.active nav { display: block; }
+}
+/* Add support for keepWithNext */
+.keepWithNext {
+  break-after: avoid-page;
+  break-after: avoid-page;
+}
+/* Add support for keepWithPrevious */
+.keepWithPrevious {
+  break-before: avoid-page;
+}
+/* Change the approach to avoiding breaks inside artwork etc. */
+figure, pre, table, .artwork, .sourcecode  {
+  break-before: auto;
+  break-after: auto;
+}
+/* Avoid breaks between <dt> and <dd> */
+dl {
+  break-before: auto;
+  break-inside: auto;
+}
+dt {
+  break-before: auto;
+  break-after: avoid-page;
+}
+dd {
+  break-before: avoid-page;
+  break-after: auto;
+  orphans: 3;
+  widows: 3
+}
+span.break, dd.break {
+  margin-bottom: 0;
+  min-height: 0;
+  break-before: auto;
+  break-inside: auto;
+  break-after: auto;
+}
+/* Undo break-before ToC */
+@media print {
+  #toc {
+    break-before: auto;
+  }
+}
+/* Text in compact lists should not get extra bottom margin space,
+   since that would makes the list not compact */
+ul.compact p, .ulCompact p,
+ol.compact p, .olCompact p {
+ margin: 0;
+}
+/* But the list as a whole needs the extra space at the end */
+section ul.compact,
+section .ulCompact,
+section ol.compact,
+section .olCompact {
+  margin-bottom: 1em;                    /* same as p not within ul.compact etc. */
+}
+/* The tt and code background above interferes with for instance table cell
+   backgrounds.  Changed to something a bit more selective. */
+tt, code {
+  background-color: transparent;
+}
+p tt, p code, li tt, li code, dt tt, dt code {
+  background-color: #f8f8f8;
+}
+/* Tweak the pre margin -- 0px doesn't come out well */
+pre {
+   margin-top: 0.5px;
+}
+/* Tweak the compact list text */
+ul.compact, .ulCompact,
+ol.compact, .olCompact,
+dl.compact, .dlCompact {
+  line-height: normal;
+}
+/* Don't add top margin for nested lists */
+li > ul, li > ol, li > dl,
+dd > ul, dd > ol, dd > dl,
+dl > dd > dl {
+  margin-top: initial;
+}
+/* Elements that should not be rendered on the same line as a <dt> */
+/* This should match the element list in writer.text.TextWriter.render_dl() */
+dd > div.artwork:first-child,
+dd > aside:first-child,
+dd > blockquote:first-child,
+dd > figure:first-child,
+dd > ol:first-child,
+dd > div.sourcecode:first-child,
+dd > table:first-child,
+dd > ul:first-child {
+  clear: left;
+}
+/* fix for weird browser behaviour when <dd/> is empty */
+dt+dd:empty::before{
+  content: "\00a0";
+}
+/* Make paragraph spacing inside <li> smaller than in body text, to fit better within the list */
+li > p {
+  margin-bottom: 0.5em
+}
+/* Don't let p margin spill out from inside list items */
+li > p:last-of-type:only-child {
+  margin-bottom: 0;
+}
+</style>
+<link href="rfc-local.css" rel="stylesheet" type="text/css">
+<script type="application/javascript">async function addMetadata(){try{const e=document.styleSheets[0].cssRules;for(let t=0;t<e.length;t++)if(/#identifiers/.exec(e[t].selectorText)){const a=e[t].cssText.replace("#identifiers","#external-updates");document.styleSheets[0].insertRule(a,document.styleSheets[0].cssRules.length)}}catch(e){console.log(e)}const e=document.getElementById("external-metadata");if(e)try{var t,a="",o=function(e){const t=document.getElementsByTagName("meta");for(let a=0;a<t.length;a++)if(t[a].getAttribute("name")===e)return t[a].getAttribute("content");return""}("rfc.number");if(o){t="https://www.rfc-editor.org/rfc/rfc"+o+".json";try{const e=await fetch(t);a=await e.json()}catch(e){t=document.URL.indexOf("html")>=0?document.URL.replace(/html$/,"json"):document.URL+".json";const o=await fetch(t);a=await o.json()}}if(!a)return;e.style.display="block";const s="",d="https://datatracker.ietf.org/doc",n="https://datatracker.ietf.org/ipr/search",c="https://www.rfc-editor.org/info",l=a.doc_id.toLowerCase(),i=a.doc_id.slice(0,3).toLowerCase(),f=a.doc_id.slice(3).replace(/^0+/,""),u={status:"Status",obsoletes:"Obsoletes",obsoleted_by:"Obsoleted By",updates:"Updates",updated_by:"Updated By",see_also:"See Also",errata_url:"Errata"};let h="<dl style='overflow:hidden' id='external-updates'>";["status","obsoletes","obsoleted_by","updates","updated_by","see_also","errata_url"].forEach(e=>{if("status"==e){a[e]=a[e].toLowerCase();var t=a[e].split(" "),o=t.length,w="",p=1;for(let e=0;e<o;e++)p<o?w=w+r(t[e])+" ":w+=r(t[e]),p++;a[e]=w}else if("obsoletes"==e||"obsoleted_by"==e||"updates"==e||"updated_by"==e){var g,m="",b=1;g=a[e].length;for(let t=0;t<g;t++)a[e][t]&&(a[e][t]=String(a[e][t]).toLowerCase(),m=b<g?m+"<a href='"+s+"/rfc/".concat(a[e][t])+"'>"+a[e][t].slice(3)+"</a>, ":m+"<a href='"+s+"/rfc/".concat(a[e][t])+"'>"+a[e][t].slice(3)+"</a>",b++);a[e]=m}else if("see_also"==e){var y,L="",C=1;y=a[e].length;for(let t=0;t<y;t++)if(a[e][t]){a[e][t]=String(a[e][t]);var _=a[e][t].slice(0,3),v=a[e][t].slice(3).replace(/^0+/,"");L=C<y?"RFC"!=_?L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+_+" "+v+"</a>, ":L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+v+"</a>, ":"RFC"!=_?L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+_+" "+v+"</a>":L+"<a href='"+s+"/info/"+_.toLowerCase().concat(v.toLowerCase())+"'>"+v+"</a>",C++}a[e]=L}else if("errata_url"==e){var R="";R=a[e]?R+"<a href='"+a[e]+"'>Errata exist</a> | <a href='"+d+"/"+l+"'>Datatracker</a>| <a href='"+n+"/?"+i+"="+f+"&submit="+i+"'>IPR</a> | <a href='"+c+"/"+l+"'>Info page</a>":"<a href='"+d+"/"+l+"'>Datatracker</a> | <a href='"+n+"/?"+i+"="+f+"&submit="+i+"'>IPR</a> | <a href='"+c+"/"+l+"'>Info page</a>",a[e]=R}""!=a[e]?"Errata"==u[e]?h+=`<dt>More info:</dt><dd>${a[e]}</dd>`:h+=`<dt>${u[e]}:</dt><dd>${a[e]}</dd>`:"Errata"==u[e]&&(h+=`<dt>More info:</dt><dd>${a[e]}</dd>`)}),h+="</dl>",e.innerHTML=h}catch(e){console.log(e)}else console.log("Could not locate metadata <div> element");function r(e){return e.charAt(0).toUpperCase()+e.slice(1)}}window.removeEventListener("load",addMetadata),window.addEventListener("load",addMetadata);</script>
+</head>
+<body class="xml2rfc">
+<table class="ears">
+<thead><tr>
+<td class="left">Internet-Draft</td>
+<td class="center">SILP Protocol</td>
+<td class="right">July 2026</td>
+</tr></thead>
+<tfoot><tr>
+<td class="left">Hwang</td>
+<td class="center">Expires 22 January 2027</td>
+<td class="right">[Page]</td>
+</tr></tfoot>
+</table>
+<div id="external-metadata" class="document-information"></div>
+<div id="internal-metadata" class="document-information">
+<dl id="identifiers">
+<dt class="label-workgroup">Workgroup:</dt>
+<dd class="workgroup">Independent Submission</dd>
+<dt class="label-published">Published:</dt>
+<dd class="published">
+<time datetime="2026-07-21" class="published">21 July 2026</time>
+    </dd>
+<dt class="label-intended-status">Intended Status:</dt>
+<dd class="intended-status">Informational</dd>
+<dt class="label-expires">Expires:</dt>
+<dd class="expires"><time datetime="2027-01-22">22 January 2027</time></dd>
+<dt class="label-authors">Author:</dt>
+<dd class="authors">
+<div class="author">
+      <div class="author-name">J. Hwang</div>
+<div class="org">Shanghai Maritime University</div>
+</div>
+</dd>
+</dl>
+</div>
+<h1 id="title">Semantic Interlingua Layer Protocol (SILP): A Payload Codec for Cross-Model Agent Communication</h1>
+<section id="section-abstract">
+      <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
+<p id="section-abstract-1">
+
+        This document specifies the Semantic Interlingua Layer Protocol (SILP),
+
+        a black-box, text-interface payload codec designed for cross-model
+
+        agent-to-agent communication. SILP defines a coarse-grained action-slot
+
+        intermediate representation (IR) as the reference semantic layer and
+
+        compiles it into multiple pluggable surface frontends -- code-like
+
+        function-call syntax, pure JSON, natural language, and ML-compressed
+
+        text. SILP is designed as a payload-layer option within existing agent
+
+        transport protocols such as the Model Context Protocol (MCP) and
+
+        Agent-to-Agent (A2A) protocol, which define transport envelopes and
+
+        capability discovery but leave payload encoding unspecified.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-2">
+
+        SILP provides compile/decode round-trip guarantees for lossless
+
+        frontends, dynamic frontend negotiation via probe messages, session
+
+        management with heartbeat renewal, and a verb whitelist verified
+
+        across six production tokenizers for cross-model token-level stability.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
+<p id="section-abstract-3">
+
+        This document is a product of independent research and is not an IETF
+
+        standard. It is published as an Informational document to establish a
+
+        stable reference for implementers.<a href="#section-abstract-3" class="pilcrow">¶</a></p>
+</section>
+<div id="status-of-memo">
+<section id="section-boilerplate.1">
+        <h2 id="name-status-of-this-memo">
+<a href="#name-status-of-this-memo" class="section-name selfRef">Status of This Memo</a>
+        </h2>
+<p id="section-boilerplate.1-1">
+        This Internet-Draft is submitted in full conformance with the
+        provisions of BCP 78 and BCP 79.<a href="#section-boilerplate.1-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-2">
+        Internet-Drafts are working documents of the Internet Engineering Task
+        Force (IETF). Note that other groups may also distribute working
+        documents as Internet-Drafts. The list of current Internet-Drafts is
+        at <span><a href="https://datatracker.ietf.org/drafts/current/">https://datatracker.ietf.org/drafts/current/</a></span>.<a href="#section-boilerplate.1-2" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-3">
+        Internet-Drafts are draft documents valid for a maximum of six months
+        and may be updated, replaced, or obsoleted by other documents at any
+        time. It is inappropriate to use Internet-Drafts as reference
+        material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.1-4">
+        This Internet-Draft will expire on 22 January 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="copyright">
+<section id="section-boilerplate.2">
+        <h2 id="name-copyright-notice">
+<a href="#name-copyright-notice" class="section-name selfRef">Copyright Notice</a>
+        </h2>
+<p id="section-boilerplate.2-1">
+            Copyright (c) 2026 IETF Trust and the persons identified as the
+            document authors. All rights reserved.<a href="#section-boilerplate.2-1" class="pilcrow">¶</a></p>
+<p id="section-boilerplate.2-2">
+            This document is subject to BCP 78 and the IETF Trust's Legal
+            Provisions Relating to IETF Documents
+            (<span><a href="https://trustee.ietf.org/license-info">https://trustee.ietf.org/license-info</a></span>) in effect on the date of
+            publication of this document. Please review these documents
+            carefully, as they describe your rights and restrictions with
+            respect to this document.<a href="#section-boilerplate.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="toc">
+<section id="section-toc.1">
+        <a href="#" onclick="scroll(0,0)" class="toplink">▲</a><h2 id="name-table-of-contents">
+<a href="#name-table-of-contents" class="section-name selfRef">Table of Contents</a>
+        </h2>
+<nav class="toc"><ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1">
+            <p id="section-toc.1-1.1.1"><a href="#section-1" class="auto internal xref">1</a>.  <a href="#name-introduction" class="internal xref">Introduction</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.1">
+                <p id="section-toc.1-1.1.2.1.1" class="keepWithNext"><a href="#section-1.1" class="auto internal xref">1.1</a>.  <a href="#name-scope" class="internal xref">Scope</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.2">
+                <p id="section-toc.1-1.1.2.2.1" class="keepWithNext"><a href="#section-1.2" class="auto internal xref">1.2</a>.  <a href="#name-terminology" class="internal xref">Terminology</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.1.2.3">
+                <p id="section-toc.1-1.1.2.3.1" class="keepWithNext"><a href="#section-1.3" class="auto internal xref">1.3</a>.  <a href="#name-design-principles" class="internal xref">Design Principles</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.2">
+            <p id="section-toc.1-1.2.1"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-protocol-architecture" class="internal xref">Protocol Architecture</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
+            <p id="section-toc.1-1.3.1"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-layer-1-application-layer-s" class="internal xref">Layer 1: Application Layer (Semantic IR)</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.1">
+                <p id="section-toc.1-1.3.2.1.1"><a href="#section-3.1" class="auto internal xref">3.1</a>.  <a href="#name-root-ir-object" class="internal xref">Root IR Object</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.2">
+                <p id="section-toc.1-1.3.2.2.1"><a href="#section-3.2" class="auto internal xref">3.2</a>.  <a href="#name-entity-object" class="internal xref">Entity Object</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.3">
+                <p id="section-toc.1-1.3.2.3.1"><a href="#section-3.3" class="auto internal xref">3.3</a>.  <a href="#name-constraint-object" class="internal xref">Constraint Object</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.4">
+                <p id="section-toc.1-1.3.2.4.1"><a href="#section-3.4" class="auto internal xref">3.4</a>.  <a href="#name-alternative-object" class="internal xref">Alternative Object</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.5">
+                <p id="section-toc.1-1.3.2.5.1"><a href="#section-3.5" class="auto internal xref">3.5</a>.  <a href="#name-meta-object" class="internal xref">Meta Object</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.6">
+                <p id="section-toc.1-1.3.2.6.1"><a href="#section-3.6" class="auto internal xref">3.6</a>.  <a href="#name-sequence-seq-semantics" class="internal xref">Sequence (seq) Semantics</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.7">
+                <p id="section-toc.1-1.3.2.7.1"><a href="#section-3.7" class="auto internal xref">3.7</a>.  <a href="#name-request-id-req_id-collision" class="internal xref">Request ID (req_id) Collision Requirements</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.8">
+                <p id="section-toc.1-1.3.2.8.1"><a href="#section-3.8" class="auto internal xref">3.8</a>.  <a href="#name-action-code-format" class="internal xref">Action Code Format</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.9">
+                <p id="section-toc.1-1.3.2.9.1"><a href="#section-3.9" class="auto internal xref">3.9</a>.  <a href="#name-verb-whitelist" class="internal xref">Verb Whitelist</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3.2.10">
+                <p id="section-toc.1-1.3.2.10.1"><a href="#section-3.10" class="auto internal xref">3.10</a>. <a href="#name-json-schema-representation" class="internal xref">JSON Schema Representation</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-layer-2-surface-layer-plugg" class="internal xref">Layer 2: Surface Layer (Pluggable Frontends)</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.1">
+                <p id="section-toc.1-1.4.2.1.1"><a href="#section-4.1" class="auto internal xref">4.1</a>.  <a href="#name-code-frontend" class="internal xref">Code Frontend</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.2">
+                <p id="section-toc.1-1.4.2.2.1"><a href="#section-4.2" class="auto internal xref">4.2</a>.  <a href="#name-json-frontend" class="internal xref">JSON Frontend</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.3">
+                <p id="section-toc.1-1.4.2.3.1"><a href="#section-4.3" class="auto internal xref">4.3</a>.  <a href="#name-natural-language-frontend" class="internal xref">Natural Language Frontend</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.4">
+                <p id="section-toc.1-1.4.2.4.1"><a href="#section-4.4" class="auto internal xref">4.4</a>.  <a href="#name-nljson-frontend" class="internal xref">NL+JSON Frontend</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.5">
+                <p id="section-toc.1-1.4.2.5.1"><a href="#section-4.5" class="auto internal xref">4.5</a>.  <a href="#name-llmlingua-2-frontend" class="internal xref">LLMLingua-2 Frontend</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4.2.6">
+                <p id="section-toc.1-1.4.2.6.1"><a href="#section-4.6" class="auto internal xref">4.6</a>.  <a href="#name-lossless-round-trip-guarant" class="internal xref">Lossless Round-Trip Guarantee</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-layer-3-meta-protocol-layer" class="internal xref">Layer 3: Meta-Protocol Layer</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.1">
+                <p id="section-toc.1-1.5.2.1.1"><a href="#section-5.1" class="auto internal xref">5.1</a>.  <a href="#name-error-codes" class="internal xref">Error Codes</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.2">
+                <p id="section-toc.1-1.5.2.2.1"><a href="#section-5.2" class="auto internal xref">5.2</a>.  <a href="#name-session-management" class="internal xref">Session Management</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5.2.3">
+                <p id="section-toc.1-1.5.2.3.1"><a href="#section-5.3" class="auto internal xref">5.3</a>.  <a href="#name-frontend-negotiation" class="internal xref">Frontend Negotiation</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-layers-4-and-5-optimization" class="internal xref">Layers 4 and 5: Optimization and Migration (Future Work)</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="auto internal xref">6.1</a>.  <a href="#name-layer-4-optimization-layer" class="internal xref">Layer 4: Optimization Layer</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-layer-5-migration-layer" class="internal xref">Layer 5: Migration Layer</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-relationship-to-existing-ag" class="internal xref">Relationship to Existing Agent Protocols</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-aidip-integration" class="internal xref">AIDIP Integration</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-mcp-integration" class="internal xref">MCP Integration</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3">
+                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-a2a-integration" class="internal xref">A2A Integration</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-changes-since-00" class="internal xref">Changes since -00</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref">9</a>.  <a href="#name-changes-since-01" class="internal xref">Changes since -01</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref">10</a>. <a href="#name-changes-since-02" class="internal xref">Changes since -02</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#section-11" class="auto internal xref">11</a>. <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.1">
+                <p id="section-toc.1-1.11.2.1.1"><a href="#section-11.1" class="auto internal xref">11.1</a>.  <a href="#name-zero-width-and-homoglyph-at" class="internal xref">Zero-Width and Homoglyph Attacks</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.2">
+                <p id="section-toc.1-1.11.2.2.1"><a href="#section-11.2" class="auto internal xref">11.2</a>.  <a href="#name-payload-injection" class="internal xref">Payload Injection</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.3">
+                <p id="section-toc.1-1.11.2.3.1"><a href="#section-11.3" class="auto internal xref">11.3</a>.  <a href="#name-request-id-collision" class="internal xref">Request ID Collision</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.4">
+                <p id="section-toc.1-1.11.2.4.1"><a href="#section-11.4" class="auto internal xref">11.4</a>.  <a href="#name-model-identity" class="internal xref">Model Identity</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11.2.5">
+                <p id="section-toc.1-1.11.2.5.1"><a href="#section-11.5" class="auto internal xref">11.5</a>.  <a href="#name-lossy-compression-risks" class="internal xref">Lossy Compression Risks</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12">
+            <p id="section-toc.1-1.12.1"><a href="#section-12" class="auto internal xref">12</a>. <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13">
+            <p id="section-toc.1-1.13.1"><a href="#section-13" class="auto internal xref">13</a>. <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14">
+            <p id="section-toc.1-1.14.1"><a href="#section-14" class="auto internal xref">14</a>. <a href="#name-informative-references" class="internal xref">Informative References</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15">
+            <p id="section-toc.1-1.15.1"><a href="#appendix-A" class="auto internal xref">Appendix A</a>.  <a href="#name-ir-examples" class="internal xref">IR Examples</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15.2.1">
+                <p id="section-toc.1-1.15.2.1.1"><a href="#appendix-A.1" class="auto internal xref">A.1</a>.  <a href="#name-example-1-negation-logic-wi" class="internal xref">Example 1: Negation Logic with Alternative</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15.2.2">
+                <p id="section-toc.1-1.15.2.2.1"><a href="#appendix-A.2" class="auto internal xref">A.2</a>.  <a href="#name-example-2-multi-constraint-" class="internal xref">Example 2: Multi-Constraint with Secondary Action</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15.2.3">
+                <p id="section-toc.1-1.15.2.3.1"><a href="#appendix-A.3" class="auto internal xref">A.3</a>.  <a href="#name-example-3-keyword-arguments" class="internal xref">Example 3: Keyword Arguments (Detail Preservation)</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15.2.4">
+                <p id="section-toc.1-1.15.2.4.1"><a href="#appendix-A.4" class="auto internal xref">A.4</a>.  <a href="#name-example-4-nested-constraint" class="internal xref">Example 4: Nested Constraints</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.15.2.5">
+                <p id="section-toc.1-1.15.2.5.1"><a href="#appendix-A.5" class="auto internal xref">A.5</a>.  <a href="#name-example-5-parallel-actions-" class="internal xref">Example 5: Parallel Actions with Sequencing</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.16">
+            <p id="section-toc.1-1.16.1"><a href="#appendix-B" class="auto internal xref">Appendix B</a>.  <a href="#name-structural-token-verificati" class="internal xref">Structural Token Verification</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.17">
+            <p id="section-toc.1-1.17.1"><a href="#appendix-C" class="auto internal xref">Appendix C</a>.  <a href="#name-acknowledgements" class="internal xref">Acknowledgements</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.18">
+            <p id="section-toc.1-1.18.1"><a href="#appendix-D" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
+</li>
+        </ul>
+</nav>
+</section>
+</div>
+<div id="introduction">
+<section id="section-1">
+      <h2 id="name-introduction">
+<a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
+      </h2>
+<p id="section-1-1">
+
+        The rise of agentic AI systems has created a new communication
+
+        paradigm: large language models (LLMs) conversing not with humans,
+
+        but with other LLMs through structured text protocols. Frameworks
+
+        such as the Model Context Protocol (MCP) <span>[<a href="#MCP" class="cite xref">MCP</a>]</span> and
+
+        Agent-to-Agent (A2A) protocol <span>[<a href="#A2A" class="cite xref">A2A</a>]</span> define transport
+
+        envelopes and capability discovery, but leave a critical gap: how
+
+        should the semantic payload itself be encoded?<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">
+
+        Current practice defaults to uncompressed natural language, which is
+
+        token-inefficient, tokenizer-dependent, and semantically ambiguous
+
+        -- particularly for negation logic, multi-step action chains,
+
+        and conditional branching. SILP addresses this gap by defining a
+
+        protocol layer that compiles a reference intermediate representation
+
+        (IR) into multiple surface encodings, each designed to exploit the
+
+        shared training priors of contemporary LLMs. The concept of an
+
+        interlingua -- an intermediate representation that mediates between
+
+        input and output languages -- has a long history in machine
+
+        translation; Abstract Meaning Representation (AMR) <span>[<a href="#AMR" class="cite xref">AMR</a>]</span>
+
+        is a notable graph-semantic example. SILP adapts this concept to the
+
+        LLM-agent domain: the IR is the interlingua, and frontends are the
+
+        surface encodings compiled from it.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">
+        Recent IETF discussions have begun addressing the agent protocol
+        ecosystem at multiple layers. The AI Agent Discovery and
+        Invocation Protocol (AIDIP) defines how agents are discovered
+        and invoked (agent metadata, registration, search, and a
+        RESTful invocation interface). The Agent-to-Agent (A2A) protocol
+        defines task lifecycle, message transport, and artifact exchange
+        between agents. The Model Context Protocol (MCP) defines how
+        agents invoke external tools. However, these protocols all leave
+        the encoding of semantic payload content to the implementer.
+        SILP fills this gap: it is not a competing transport or
+        discovery protocol, but a payload-layer codec that can be
+        embedded within the message fields of A2A, MCP, or AIDIP-based
+        systems to ensure cross-model semantic consistency.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<div id="scope">
+<section id="section-1.1">
+        <h3 id="name-scope">
+<a href="#section-1.1" class="section-number selfRef">1.1. </a><a href="#name-scope" class="section-name selfRef">Scope</a>
+        </h3>
+<p id="section-1.1-1">
+
+          SILP is a payload-layer codec. It does not replace transport
+
+          protocols, lifecycle management, or capability discovery. SILP
+
+          payloads are designed to be carried inside MCP's <code>params</code>
+
+          field or A2A's <code>task/message/artifact</code> fields without
+
+          modifying their semantics.<a href="#section-1.1-1" class="pilcrow">¶</a></p>
+<p id="section-1.1-2">
+
+          SILP operates through a pure text interface. It does not access
+
+          or manipulate model-internal latent representations. All encodings
+
+          produced by lossless frontends are auditable and decodable back to
+
+          the reference IR.<a href="#section-1.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="terminology">
+<section id="section-1.2">
+        <h3 id="name-terminology">
+<a href="#section-1.2" class="section-number selfRef">1.2. </a><a href="#name-terminology" class="section-name selfRef">Terminology</a>
+        </h3>
+<p id="section-1.2-1">
+
+          The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+
+          "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY",
+
+          and "OPTIONAL" in this document are to be interpreted as described
+
+          in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when,
+
+          and only when, they appear in all capitals, as shown here.<a href="#section-1.2-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlNewline" id="section-1.2-2">
+          <dt id="section-1.2-2.1">IR (Intermediate Representation):</dt>
+          <dd style="margin-left: 1.5em" id="section-1.2-2.2">The reference semantic payload defined in <a href="#layer-1" class="auto internal xref">Section 3</a>. All frontends compile from and decode to this representation.<a href="#section-1.2-2.2" class="pilcrow">¶</a>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-1.2-2.3">Frontend:</dt>
+          <dd style="margin-left: 1.5em" id="section-1.2-2.4">A specific surface encoding of the IR (e.g., code-like syntax, JSON, natural language). See <a href="#layer-2" class="auto internal xref">Section 4</a>.<a href="#section-1.2-2.4" class="pilcrow">¶</a>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-1.2-2.5">Compile:</dt>
+          <dd style="margin-left: 1.5em" id="section-1.2-2.6">The process of converting an IR to a surface string via a frontend.<a href="#section-1.2-2.6" class="pilcrow">¶</a>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-1.2-2.7">Decode:</dt>
+          <dd style="margin-left: 1.5em" id="section-1.2-2.8">The process of recovering an IR from a surface string via a frontend.<a href="#section-1.2-2.8" class="pilcrow">¶</a>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-1.2-2.9">Lossless frontend:</dt>
+          <dd style="margin-left: 1.5em" id="section-1.2-2.10">A frontend where <code>decode(compile(ir))</code> produces an IR semantically equivalent to the original for all valid IRs.<a href="#section-1.2-2.10" class="pilcrow">¶</a>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-1.2-2.11">Action code:</dt>
+          <dd style="margin-left: 1.5em" id="section-1.2-2.12">An IR primitive following the format <code>!</code> + <code>UPPERCASE_VERB</code> (e.g., <code>!CANCEL</code>).<a href="#section-1.2-2.12" class="pilcrow">¶</a>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-1.2-2.13">Session:</dt>
+          <dd style="margin-left: 1.5em" id="section-1.2-2.14">A stateful conversation context between two or more agents, identified by a session ID.<a href="#section-1.2-2.14" class="pilcrow">¶</a>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-1.2-2.15">Heartbeat:</dt>
+          <dd style="margin-left: 1.5em" id="section-1.2-2.16">A session renewal mechanism that resets accumulated context every N turns.<a href="#section-1.2-2.16" class="pilcrow">¶</a>
+</dd>
+        <dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="design-principles">
+<section id="section-1.3">
+        <h3 id="name-design-principles">
+<a href="#section-1.3" class="section-number selfRef">1.3. </a><a href="#name-design-principles" class="section-name selfRef">Design Principles</a>
+        </h3>
+<ol start="1" type="1" class="normal type-1" id="section-1.3-1">
+
+          <li id="section-1.3-1.1">
+            <strong>Protocol, not compression:</strong> SILP is a protocol layer with lossless round-trip guarantees. Compression is a side effect of compact encoding, not the primary goal.<a href="#section-1.3-1.1" class="pilcrow">¶</a>
+</li>
+          <li id="section-1.3-1.2">
+            <strong>Black-box text interface:</strong> SILP does not require model-internal access, fine-tuning, or latent representation manipulation. It operates purely through text that LLMs process during inference.<a href="#section-1.3-1.2" class="pilcrow">¶</a>
+</li>
+          <li id="section-1.3-1.3">
+            <strong>Tokenizer-aware vocabulary:</strong> The verb whitelist is verified to be single-token and UNK-free across six production tokenizers, ensuring cross-model token-level stability.<a href="#section-1.3-1.3" class="pilcrow">¶</a>
+</li>
+          <li id="section-1.3-1.4">
+            <strong>Auditability:</strong> All lossless frontend encodings can be decoded back to the reference IR. The compile.lock mechanism provides tamper-evident first-pass freezing.<a href="#section-1.3-1.4" class="pilcrow">¶</a>
+</li>
+          <li id="section-1.3-1.5">
+            <strong>Extensibility:</strong> The IR root is strict (<code>extra="forbid"</code>) while sub-models allow extra fields. Receivers MUST silently ignore unknown fields in extensible sub-models.<a href="#section-1.3-1.5" class="pilcrow">¶</a>
+</li>
+        </ol>
+</section>
+</div>
+</section>
+</div>
+<div id="architecture">
+<section id="section-2">
+      <h2 id="name-protocol-architecture">
+<a href="#section-2" class="section-number selfRef">2. </a><a href="#name-protocol-architecture" class="section-name selfRef">Protocol Architecture</a>
+      </h2>
+<p id="section-2-1">
+
+        SILP is a five-layer protocol stack. Layers 1 and 2 are fully
+
+        specified in this document. Layer 3 is partially specified.
+
+        Layers 4 and 5 are design-level and reserved for future work.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<span id="name-silp-five-layer-stack"></span><div id="tab-layers">
+<table class="center" id="table-1">
+        <caption>
+<a href="#table-1" class="selfRef">Table 1</a>:
+<a href="#name-silp-five-layer-stack" class="selfRef">SILP Five-Layer Stack</a>
+        </caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Layer</th>
+            <th class="text-left" rowspan="1" colspan="1">Name</th>
+            <th class="text-left" rowspan="1" colspan="1">Module</th>
+            <th class="text-left" rowspan="1" colspan="1">Description</th>
+            <th class="text-left" rowspan="1" colspan="1">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">1</td>
+            <td class="text-left" rowspan="1" colspan="1">Application</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>silp.ir</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Semantic IR (action-slot structure)</td>
+            <td class="text-left" rowspan="1" colspan="1">Specified</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">2</td>
+            <td class="text-left" rowspan="1" colspan="1">Surface</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>silp.frontend</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Pluggable frontends (code, JSON, natural, nl_json, llmlingua2)</td>
+            <td class="text-left" rowspan="1" colspan="1">Specified</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">3</td>
+            <td class="text-left" rowspan="1" colspan="1">Meta-protocol</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>silp.negotiation</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Frontend negotiation, session management, error codes</td>
+            <td class="text-left" rowspan="1" colspan="1">Partially specified</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">4</td>
+            <td class="text-left" rowspan="1" colspan="1">Optimization</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>silp.bench</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Multi-objective fitness function + genetic algorithm</td>
+            <td class="text-left" rowspan="1" colspan="1">Future work</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">5</td>
+            <td class="text-left" rowspan="1" colspan="1">Migration</td>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>silp.bench</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Small-model screening proxy for frontend evaluation</td>
+            <td class="text-left" rowspan="1" colspan="1">Future work</td>
+          </tr>
+        </tbody>
+      </table>
+</div>
+</section>
+</div>
+<div id="layer-1">
+<section id="section-3">
+      <h2 id="name-layer-1-application-layer-s">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-layer-1-application-layer-s" class="section-name selfRef">Layer 1: Application Layer (Semantic IR)</a>
+      </h2>
+<p id="section-3-1">
+
+        The reference intermediate representation is a JSON-serialized
+
+        action-slot structure. It is the single source of semantic truth:
+
+        all frontends compile from this IR and decode back to it. The IR
+
+        is defined as a JSON Schema with strict validation at the root
+
+        level and extensible sub-models.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<div id="ir-root">
+<section id="section-3.1">
+        <h3 id="name-root-ir-object">
+<a href="#section-3.1" class="section-number selfRef">3.1. </a><a href="#name-root-ir-object" class="section-name selfRef">Root IR Object</a>
+        </h3>
+<p id="section-3.1-1">
+
+          The root IR object (<code>SilpIR</code>) MUST contain the following
+
+          fields. Unknown fields at the root level are forbidden
+
+          (<code>extra="forbid"</code>).<a href="#section-3.1-1" class="pilcrow">¶</a></p>
+<span id="name-root-ir-fields"></span><div id="tab-ir-fields">
+<table class="center" id="table-2">
+          <caption>
+<a href="#table-2" class="selfRef">Table 2</a>:
+<a href="#name-root-ir-fields" class="selfRef">Root IR Fields</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Field</th>
+              <th class="text-left" rowspan="1" colspan="1">Type</th>
+              <th class="text-left" rowspan="1" colspan="1">Required</th>
+              <th class="text-left" rowspan="1" colspan="1">Default</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>silp</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>"v1"</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Protocol version. MUST match <code>^v\d+$</code>.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>version</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>"ir-v0.1"</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">IR schema version.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>intent</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">--</td>
+              <td class="text-left" rowspan="1" colspan="1">Main action code. MUST match <code>^![A-Z][A-Z_]*$</code>.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>entities</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">array of Entity</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>[]</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Argument slots and secondary actions.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>constraints</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">array of Constraint</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>[]</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Conditions on the task.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>alternatives</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">array of Alternative</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>[]</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Fallback actions (else-branch).</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>meta</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Meta object</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">--</td>
+              <td class="text-left" rowspan="1" colspan="1">Protocol-level metadata.</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+</section>
+</div>
+<div id="ir-entity">
+<section id="section-3.2">
+        <h3 id="name-entity-object">
+<a href="#section-3.2" class="section-number selfRef">3.2. </a><a href="#name-entity-object" class="section-name selfRef">Entity Object</a>
+        </h3>
+<p id="section-3.2-1">
+
+          An entity represents an argument slot. If the <code>action</code>
+
+          field matches the root <code>intent</code>, the entity is an argument
+
+          to the primary action. If <code>action</code> differs from
+
+          <code>intent</code>, it is a secondary action (e.g.,
+
+          <code>email(zhangsan)</code> alongside <code>cancel(flight)</code>).<a href="#section-3.2-1" class="pilcrow">¶</a></p>
+<p id="section-3.2-2">
+
+          The Entity object allows extra fields (<code>extra="allow"</code>).
+
+          Receivers MUST silently ignore unknown Entity fields.<a href="#section-3.2-2" class="pilcrow">¶</a></p>
+<span id="name-entity-fields"></span><div id="tab-entity-fields">
+<table class="center" id="table-3">
+          <caption>
+<a href="#table-3" class="selfRef">Table 3</a>:
+<a href="#name-entity-fields" class="selfRef">Entity Fields</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Field</th>
+              <th class="text-left" rowspan="1" colspan="1">Type</th>
+              <th class="text-left" rowspan="1" colspan="1">Required</th>
+              <th class="text-left" rowspan="1" colspan="1">Default</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>id</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">--</td>
+              <td class="text-left" rowspan="1" colspan="1">Slot identifier. <code>"act"</code> indicates a positional argument.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>value</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">--</td>
+              <td class="text-left" rowspan="1" colspan="1">The slot value.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>action</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string (optional)</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>null</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Action code if this entity belongs to a secondary action. MUST match <code>^![A-Z][A-Z_]*$</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+</section>
+</div>
+<div id="ir-constraint">
+<section id="section-3.3">
+        <h3 id="name-constraint-object">
+<a href="#section-3.3" class="section-number selfRef">3.3. </a><a href="#name-constraint-object" class="section-name selfRef">Constraint Object</a>
+        </h3>
+<p id="section-3.3-1">
+
+          A constraint represents a condition on the task. Convention for
+
+          negation: prefix the <code>type</code> field with <code>!</code> (e.g.,
+
+          <code>"!rain"</code>) to produce <code>!rain(t+1)</code> in the code
+
+          frontend.<a href="#section-3.3-1" class="pilcrow">¶</a></p>
+<p id="section-3.3-2">
+
+          The Constraint object allows extra fields
+
+          (<code>extra="allow"</code>). Common extra fields include
+
+          <code>subject</code> (first positional argument in function-call
+
+          constraints) and <code>operator</code> (infix operator such as
+
+          <code>&gt;</code>, <code>&lt;=</code>). Receivers MUST silently ignore
+
+          unknown Constraint fields.<a href="#section-3.3-2" class="pilcrow">¶</a></p>
+<span id="name-constraint-fields"></span><div id="tab-constraint-fields">
+<table class="center" id="table-4">
+          <caption>
+<a href="#table-4" class="selfRef">Table 4</a>:
+<a href="#name-constraint-fields" class="selfRef">Constraint Fields</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Field</th>
+              <th class="text-left" rowspan="1" colspan="1">Type</th>
+              <th class="text-left" rowspan="1" colspan="1">Required</th>
+              <th class="text-left" rowspan="1" colspan="1">Default</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>type</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">--</td>
+              <td class="text-left" rowspan="1" colspan="1">Constraint type. Prefix <code>!</code> for negation.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>value</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">--</td>
+              <td class="text-left" rowspan="1" colspan="1">Constraint value.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>time</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string (optional)</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>null</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Temporal reference, e.g., <code>"t+1"</code>, <code>"t+1am"</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+</section>
+</div>
+<div id="ir-alternative">
+<section id="section-3.4">
+        <h3 id="name-alternative-object">
+<a href="#section-3.4" class="section-number selfRef">3.4. </a><a href="#name-alternative-object" class="section-name selfRef">Alternative Object</a>
+        </h3>
+<p id="section-3.4-1">
+
+          An alternative represents a fallback action (else-branch) executed
+
+          when constraints are not met. The Alternative object allows extra
+
+          fields (<code>extra="allow"</code>).<a href="#section-3.4-1" class="pilcrow">¶</a></p>
+<span id="name-alternative-fields"></span><div id="tab-alternative-fields">
+<table class="center" id="table-5">
+          <caption>
+<a href="#table-5" class="selfRef">Table 5</a>:
+<a href="#name-alternative-fields" class="selfRef">Alternative Fields</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Field</th>
+              <th class="text-left" rowspan="1" colspan="1">Type</th>
+              <th class="text-left" rowspan="1" colspan="1">Required</th>
+              <th class="text-left" rowspan="1" colspan="1">Default</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>action</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">--</td>
+              <td class="text-left" rowspan="1" colspan="1">Action code. MUST match <code>^![A-Z][A-Z_]*$</code>.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>target</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string (optional)</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>null</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Target entity of the fallback action.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>location</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string (optional)</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>null</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Location qualifier for the fallback.</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+</section>
+</div>
+<div id="ir-meta">
+<section id="section-3.5">
+        <h3 id="name-meta-object">
+<a href="#section-3.5" class="section-number selfRef">3.5. </a><a href="#name-meta-object" class="section-name selfRef">Meta Object</a>
+        </h3>
+<p id="section-3.5-1">
+
+          The Meta object carries protocol-level metadata. It allows extra
+
+          fields (<code>extra="allow"</code>) for forward compatibility.
+
+          Receivers MUST silently ignore unknown Meta fields.<a href="#section-3.5-1" class="pilcrow">¶</a></p>
+<span id="name-meta-fields"></span><div id="tab-meta-fields">
+<table class="center" id="table-6">
+          <caption>
+<a href="#table-6" class="selfRef">Table 6</a>:
+<a href="#name-meta-fields" class="selfRef">Meta Fields</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Field</th>
+              <th class="text-left" rowspan="1" colspan="1">Type</th>
+              <th class="text-left" rowspan="1" colspan="1">Required</th>
+              <th class="text-left" rowspan="1" colspan="1">Default</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>req_id</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">--</td>
+              <td class="text-left" rowspan="1" colspan="1">Request identifier. MUST match <code>^[a-f0-9]{4,8}$</code>. Default length: 8 hex chars (32 bits). 4 hex chars permitted only in scope-limited sessions.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>session_id</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string (optional)</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>null</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">2-character session identifier for stateful mode.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>priority</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">integer</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>0</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Priority level.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>confidence</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">float</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>1.0</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Confidence score in range [0.0, 1.0].</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>seq</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">array of string</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>[]</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Sequence of action codes for multi-step tasks.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>out</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>"natural"</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Output format hint for the receiver.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>next_agent</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">string (optional)</td>
+              <td class="text-left" rowspan="1" colspan="1">No</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>null</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Routing hint for the next agent.</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+</section>
+</div>
+<div id="seq-semantics">
+<section id="section-3.6">
+        <h3 id="name-sequence-seq-semantics">
+<a href="#section-3.6" class="section-number selfRef">3.6. </a><a href="#name-sequence-seq-semantics" class="section-name selfRef">Sequence (seq) Semantics</a>
+        </h3>
+<p id="section-3.6-1">
+          The <code>seq</code> field expresses strict, unconditional serial
+          execution order. If <code>seq</code> is present and non-empty,
+          implementations MUST preserve the specified order when
+          executing the referenced actions. Reordering constitutes a
+          materially different task.<a href="#section-3.6-1" class="pilcrow">¶</a></p>
+<p id="section-3.6-2">
+          The validator recognizes four ordering keywords as valid
+          entries in the <code>seq</code> array: <code>parallel</code>,
+          <code>sequential</code>, <code>reason_first</code>, and
+          <code>reason_last</code>. These keywords are currently recognized
+          tokens only -- this specification does NOT define any behavior
+          associated with them. In particular, the presence of
+          <code>parallel</code> does NOT relax the ordering requirement
+          above. Implementations MUST NOT infer parallel, conditional,
+          or other execution semantics from these keywords. A future
+          revision of this document MAY define normative behavior for
+          one or more of these keywords; until such behavior is
+          specified, receivers encountering them SHOULD treat their
+          semantic effect as undefined and MAY reject or flag payloads
+          that rely on unspecified keyword behavior.<a href="#section-3.6-2" class="pilcrow">¶</a></p>
+<p id="section-3.6-3">
+          Conditional branching is expressed via <code>constraints</code>
+          and <code>alternatives</code>, not via <code>seq</code>. The
+          <code>seq</code> field governs execution order only.<a href="#section-3.6-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="ir-req-id">
+<section id="section-3.7">
+        <h3 id="name-request-id-req_id-collision">
+<a href="#section-3.7" class="section-number selfRef">3.7. </a><a href="#name-request-id-req_id-collision" class="section-name selfRef">Request ID (req_id) Collision Requirements</a>
+        </h3>
+<p id="section-3.7-1">
+
+          The <code>req_id</code> field is a hexadecimal hash used for request
+
+          correlation. Based on collision testing (n=1,000 simulated IDs
+
+          per condition):<a href="#section-3.7-1" class="pilcrow">¶</a></p>
+<ul class="compact">
+<li class="compact" id="section-3.7-2.1">4 hex chars (16 bits): 995 unique IDs, 5 collisions, 0.5% duplicate fraction. Permitted ONLY for short-lived, scope-limited sessions.<a href="#section-3.7-2.1" class="pilcrow">¶</a>
+</li>
+          <li class="compact" id="section-3.7-2.2">6 hex chars (24 bits): 1,000 unique IDs, 0 collisions, 0.0% duplicate fraction. Not recommended as default due to birthday-bound collision probability at scale.<a href="#section-3.7-2.2" class="pilcrow">¶</a>
+</li>
+          <li class="compact" id="section-3.7-2.3">8 hex chars (32 bits): 1,000 unique IDs, 0 collisions, 0.0% duplicate fraction. This is the recommended default.<a href="#section-3.7-2.3" class="pilcrow">¶</a>
+</li>
+        </ul>
+<p id="section-3.7-3">
+
+          Implementations MUST use 8 hex characters as the default
+
+          <code>req_id</code> length. Implementations MAY use 4 hex characters
+
+          only when the session is scope-limited and the total number of
+
+          concurrent requests is known to be small.<a href="#section-3.7-3" class="pilcrow">¶</a></p>
+<p id="section-3.7-4">
+
+          Note: duplicate fraction is not the same as the probability of at
+
+          least one collision. In 16-bit space, the birthday-bound collision
+
+          probability for n=1,000 is approximately 99.9%.<a href="#section-3.7-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="ir-action-codes">
+<section id="section-3.8">
+        <h3 id="name-action-code-format">
+<a href="#section-3.8" class="section-number selfRef">3.8. </a><a href="#name-action-code-format" class="section-name selfRef">Action Code Format</a>
+        </h3>
+<p id="section-3.8-1">
+
+          Action codes follow the format: <code>!</code> followed by
+
+          <code>UPPERCASE_VERB</code> where the verb consists of uppercase
+
+          ASCII letters and underscores. The formal grammar in ABNF
+
+          <span>[<a href="#RFC5234" class="cite xref">RFC5234</a>]</span> is:<a href="#section-3.8-1" class="pilcrow">¶</a></p>
+<div class="lang-abnf sourcecode" id="section-3.8-2">
+<pre>&lt;CODE BEGINS&gt; file "action-code-abnf"
+
+
+action-code = "!" 1*UPPER-LETTER *( "_" 1*UPPER-LETTER )
+
+UPPER-LETTER = %x41-5A  ; A-Z
+
+
+&lt;CODE ENDS&gt;</pre><a href="#section-3.8-2" class="pilcrow">¶</a>
+</div>
+<p id="section-3.8-3">
+
+          Lowercase function names in the code frontend are derived by
+
+          removing the <code>!</code> prefix and converting to lowercase:
+
+          <code>!CANCEL</code> -&gt; <code>cancel</code>.<a href="#section-3.8-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="ir-whitelist">
+<section id="section-3.9">
+        <h3 id="name-verb-whitelist">
+<a href="#section-3.9" class="section-number selfRef">3.9. </a><a href="#name-verb-whitelist" class="section-name selfRef">Verb Whitelist</a>
+        </h3>
+<p id="section-3.9-1">
+
+          The following 13 verbs are approved as IR action code primitives.
+
+          Each verb has been verified to be single-token (exactly 1 token)
+
+          across six production tokenizers: gpt-4o (o200k_base), gpt-3.5
+
+          (cl100k_base), llama-2, qwen2.5, claude, and gemini. The complete
+
+          census data is available in the reference implementation
+
+          <span>[<a href="#SILP-CODE" class="cite xref">SILP-CODE</a>]</span>.<a href="#section-3.9-1" class="pilcrow">¶</a></p>
+<span id="name-approved-verb-whitelist-13-"></span><div id="tab-whitelist">
+<table class="center" id="table-7">
+          <caption>
+<a href="#table-7" class="selfRef">Table 7</a>:
+<a href="#name-approved-verb-whitelist-13-" class="selfRef">Approved Verb Whitelist (13 Verbs, All Single-Token Across 6 Tokenizers)</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Action Code</th>
+              <th class="text-left" rowspan="1" colspan="1">Function Name</th>
+              <th class="text-left" rowspan="1" colspan="1">Single-Token (all 6)</th>
+              <th class="text-left" rowspan="1" colspan="1">UNK-Free (all 6)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!CANCEL</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>cancel</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!START</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>start</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!EMAIL</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>email</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!FETCH</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>fetch</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!PROCESS</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>process</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!TRANSLATE</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>translate</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!BOOK</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>book</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!ROUTE</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>route</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!SEARCH</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>search</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!UPDATE</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>update</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!SUGGEST</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>suggest</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!SWITCH</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>switch</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!NOTIFY</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>notify</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+              <td class="text-left" rowspan="1" colspan="1">Yes</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+<p id="section-3.9-3">
+
+          The following verbs are EXCLUDED from the whitelist and MUST NOT
+
+          be used as IR action codes:<a href="#section-3.9-3" class="pilcrow">¶</a></p>
+<span id="name-excluded-verbs"></span><div id="tab-excluded">
+<table class="center" id="table-8">
+          <caption>
+<a href="#table-8" class="selfRef">Table 8</a>:
+<a href="#name-excluded-verbs" class="selfRef">Excluded Verbs</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Verb</th>
+              <th class="text-left" rowspan="1" colspan="1">Token Counts Across 6 Tokenizers</th>
+              <th class="text-left" rowspan="1" colspan="1">Reason</th>
+              <th class="text-left" rowspan="1" colspan="1">Suggested Replacement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!SWITCH_TOOL</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">gpt-4o: 2, gpt-3.5: 2, llama-2: 3, qwen2.5: 2, claude: 3, gemini: 3</td>
+              <td class="text-left" rowspan="1" colspan="1">Multi-token (2-3 tokens). Never single-token on any tested tokenizer.</td>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!SWITCH</code>
+</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>!ESCALATE</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">gpt-4o: 3, gpt-3.5: 2, llama-2: 3, qwen2.5: 2, claude: 3, gemini: 2</td>
+              <td class="text-left" rowspan="1" colspan="1">Multi-token (2-3 tokens). Sub-word fragment "ate" has spurious meaning (English verb "ate").</td>
+              <td class="text-left" rowspan="1" colspan="1">Use a single-token alternative</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+</section>
+</div>
+<div id="ir-json-schema">
+<section id="section-3.10">
+        <h3 id="name-json-schema-representation">
+<a href="#section-3.10" class="section-number selfRef">3.10. </a><a href="#name-json-schema-representation" class="section-name selfRef">JSON Schema Representation</a>
+        </h3>
+<p id="section-3.10-1">
+
+          The complete IR schema is represented below as a JSON Schema
+
+          (Draft 2020-12). This is the normative representation of the
+
+          IR structure. Implementations MUST validate IR objects against
+
+          this schema before processing.<a href="#section-3.10-1" class="pilcrow">¶</a></p>
+<div class="breakable lang-json sourcecode" id="section-3.10-2">
+<pre>&lt;CODE BEGINS&gt; file "silp-ir-schema.json"
+
+
+{
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "https://github.com/Juwan-Hwang/polyglotir",
+  "title": "SILP IR",
+
+  "type": "object",
+
+  "additionalProperties": false,
+
+  "required": ["intent", "meta"],
+
+  "properties": {
+
+    "silp": {
+      "type": "string",
+      "pattern": "^v\\d+$",
+      "default": "v1"
+    },
+
+    "version": { "type": "string", "default": "ir-v0.1" },
+
+    "intent": { "type": "string", "pattern": "^![A-Z][A-Z_]*$" },
+
+    "entities": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "additionalProperties": true,
+
+        "required": ["id", "value"],
+
+        "properties": {
+
+          "id": { "type": "string" },
+
+          "value": { "type": "string" },
+
+          "action": {
+          "type": "string",
+          "pattern": "^![A-Z][A-Z_]*$"
+        }
+
+        }
+
+      }
+
+    },
+
+    "constraints": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "additionalProperties": true,
+
+        "required": ["type", "value"],
+
+        "properties": {
+
+          "type": { "type": "string" },
+
+          "value": { "type": "string" },
+
+          "time": { "type": "string" }
+
+        }
+
+      }
+
+    },
+
+    "alternatives": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "additionalProperties": true,
+
+        "required": ["action"],
+
+        "properties": {
+
+          "action": {
+          "type": "string",
+          "pattern": "^![A-Z][A-Z_]*$"
+        },
+
+          "target": { "type": "string" },
+
+          "location": { "type": "string" }
+
+        }
+
+      }
+
+    },
+
+    "meta": {
+
+      "type": "object",
+
+      "additionalProperties": true,
+
+      "required": ["req_id"],
+
+      "properties": {
+
+        "req_id": { "type": "string", "pattern": "^[a-f0-9]{4,8}$" },
+
+        "session_id": { "type": "string" },
+
+        "priority": { "type": "integer", "default": 0 },
+
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1.0
+        },
+
+        "seq": { "type": "array", "items": { "type": "string" } },
+
+        "out": { "type": "string", "default": "natural" },
+
+        "next_agent": { "type": "string" }
+
+      }
+
+    }
+
+  }
+
+}
+
+
+&lt;CODE ENDS&gt;</pre><a href="#section-3.10-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="layer-2">
+<section id="section-4">
+      <h2 id="name-layer-2-surface-layer-plugg">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-layer-2-surface-layer-plugg" class="section-name selfRef">Layer 2: Surface Layer (Pluggable Frontends)</a>
+      </h2>
+<p id="section-4-1">
+
+        Five frontends compile IR to surface string. Two frontends
+
+        (<code>code</code> and <code>json</code>) are lossless codecs satisfying
+
+        <code>decode(compile(ir)) == ir</code>. Three frontends
+
+        (<code>natural</code>, <code>nl_json</code>, <code>llmlingua2</code>) are
+
+        control baselines that do not support decode.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<span id="name-surface-frontends"></span><div id="tab-frontends">
+<table class="center" id="table-9">
+        <caption>
+<a href="#table-9" class="selfRef">Table 9</a>:
+<a href="#name-surface-frontends" class="selfRef">Surface Frontends</a>
+        </caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Frontend</th>
+            <th class="text-left" rowspan="1" colspan="1">Description</th>
+            <th class="text-left" rowspan="1" colspan="1">Round-trip</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>code</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Function-call syntax</td>
+            <td class="text-left" rowspan="1" colspan="1">Yes (lossless)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>json</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Flat JSON slots</td>
+            <td class="text-left" rowspan="1" colspan="1">Yes (lossless)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>natural</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Unstructured prose</td>
+            <td class="text-left" rowspan="1" colspan="1">No (control)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>nl_json</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Natural language wrapped in JSON</td>
+            <td class="text-left" rowspan="1" colspan="1">No (control)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>llmlingua2</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">LLMLingua-2 compressed natural language</td>
+            <td class="text-left" rowspan="1" colspan="1">No (lossy)</td>
+          </tr>
+        </tbody>
+      </table>
+</div>
+<div id="frontend-code">
+<section id="section-4.1">
+        <h3 id="name-code-frontend">
+<a href="#section-4.1" class="section-number selfRef">4.1. </a><a href="#name-code-frontend" class="section-name selfRef">Code Frontend</a>
+        </h3>
+<p id="section-4.1-1">
+
+          The code frontend maps IR action codes to lowercase function calls
+
+          (<code>!CANCEL</code> -&gt; <code>cancel()</code>), compiles constraints
+
+          as boolean conditions, entities as positional or keyword arguments,
+
+          and alternatives as <code>else:</code> branches.<a href="#section-4.1-1" class="pilcrow">¶</a></p>
+<p id="section-4.1-2">The general compilation form in ABNF <span>[<a href="#RFC5234" class="cite xref">RFC5234</a>]</span> is:<a href="#section-4.1-2" class="pilcrow">¶</a></p>
+<div class="lang-abnf sourcecode" id="section-4.1-3">
+<pre>&lt;CODE BEGINS&gt; file "code-frontend-abnf"
+
+
+code-frontend = [ "if " condition ": " ] actions
+               [ " else: " alt-actions ]
+
+condition     = constraint *( " and " constraint )
+
+constraint    = negation / operator-form / func-call
+
+negation      = "!" verb [ "(" time ")" ]
+
+operator-form = verb operator value [ ", " time ]
+
+func-call     = verb "(" [ subject "," ] value [ "," time ] ")"
+
+actions       = primary-call *( "; " secondary-call )
+
+primary-call  = fn-name "(" [ args ] ")"
+
+secondary-call = fn-name "(" [ positional-args ] ")"
+
+alt-actions   = alt-call *( "; " alt-call )
+
+alt-call      = fn-name "(" [ target [ "@" location ]
+                 / "loc=" location ] ")"
+
+args          = arg *( "," arg )
+
+arg           = positional-arg / kw-arg
+
+positional-arg = value
+
+kw-arg        = id "=" value
+
+fn-name       = 1*LOWER-LETTER *( "_" 1*LOWER-LETTER )
+
+verb          = 1*UPPER-LETTER *( "_" 1*UPPER-LETTER )
+
+LOWER-LETTER  = %x61-7A  ; a-z
+
+UPPER-LETTER  = %x41-5A  ; A-Z
+
+
+&lt;CODE ENDS&gt;</pre><a href="#section-4.1-3" class="pilcrow">¶</a>
+</div>
+<p id="section-4.1-4">Examples:<a href="#section-4.1-4" class="pilcrow">¶</a></p>
+<div class="lang-text sourcecode" id="section-4.1-5">
+<pre>
+
+# Negation logic
+
+if !rain(t+1): start(hike) else start(cards@indoor)
+
+# Multi-constraint with secondary action
+
+if loc(me,Beijing,t+1am): cancel(flight,t+1pm); email(zhangsan)
+
+# Keyword arguments
+
+translate(src=fr_rev_bold, tgt=shakespeare_en, style=archaic_heavy)
+
+# Operator condition
+
+if weather&gt;rain: switch(indoor_activity)
+
+# Nested constraints
+
+if budget&lt;=500 and rating&gt;=4.0: book(hotel,downtown,t+5)
+
+</pre><a href="#section-4.1-5" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="frontend-json">
+<section id="section-4.2">
+        <h3 id="name-json-frontend">
+<a href="#section-4.2" class="section-number selfRef">4.2. </a><a href="#name-json-frontend" class="section-name selfRef">JSON Frontend</a>
+        </h3>
+<p id="section-4.2-1">
+
+          The JSON frontend renders the IR as a flat JSON object
+
+          <span>[<a href="#RFC8259" class="cite xref">RFC8259</a>]</span> with only semantic slots -- no code
+
+          syntax. This isolates "format contribution" (structured JSON)
+
+          from "code vocabulary prior" (function-call syntax).<a href="#section-4.2-1" class="pilcrow">¶</a></p>
+<p id="section-4.2-2">
+
+          Entities matching the root intent are flattened to top-level
+
+          slots. Secondary actions (entities whose <code>action</code> differs
+
+          from <code>intent</code>) are grouped under keys prefixed with
+
+          <code>action_</code>.<a href="#section-4.2-2" class="pilcrow">¶</a></p>
+<div class="lang-json sourcecode" id="section-4.2-3">
+<pre>&lt;CODE BEGINS&gt; file "json-frontend-example"
+
+
+{
+
+  "intent": "!CANCEL",
+
+  "act": "flight",
+
+  "action_email": ["zhangsan"],
+
+  "constraints": [
+
+    {"type": "loc",
+       "value": "Beijing",
+       "time": "t+1am",
+       "subject": "me"}
+
+  ]
+
+}
+
+
+&lt;CODE ENDS&gt;</pre><a href="#section-4.2-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="frontend-natural">
+<section id="section-4.3">
+        <h3 id="name-natural-language-frontend">
+<a href="#section-4.3" class="section-number selfRef">4.3. </a><a href="#name-natural-language-frontend" class="section-name selfRef">Natural Language Frontend</a>
+        </h3>
+<p id="section-4.3-1">
+
+          The natural frontend renders the IR as unstructured English prose.
+
+          It is a control baseline and does NOT support decode. Example
+
+          output: "If not rain at t+1, start hike otherwise start cards
+
+          at indoor."<a href="#section-4.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="frontend-nl-json">
+<section id="section-4.4">
+        <h3 id="name-nljson-frontend">
+<a href="#section-4.4" class="section-number selfRef">4.4. </a><a href="#name-nljson-frontend" class="section-name selfRef">NL+JSON Frontend</a>
+        </h3>
+<p id="section-4.4-1">
+
+          The nl_json frontend wraps the exact same prose produced by the
+
+          natural frontend inside a JSON <code>task_description</code> field.
+
+          It is a control baseline isolating the JSON-container effect and
+
+          does NOT support decode.<a href="#section-4.4-1" class="pilcrow">¶</a></p>
+<div class="lang-json sourcecode" id="section-4.4-2">
+<pre>&lt;CODE BEGINS&gt; file "nl-json-example"
+
+
+{"task_description":
+ "If not rain at t+1, start hike otherwise start cards at indoor."}
+
+
+&lt;CODE ENDS&gt;</pre><a href="#section-4.4-2" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="frontend-llmlingua2">
+<section id="section-4.5">
+        <h3 id="name-llmlingua-2-frontend">
+<a href="#section-4.5" class="section-number selfRef">4.5. </a><a href="#name-llmlingua-2-frontend" class="section-name selfRef">LLMLingua-2 Frontend</a>
+        </h3>
+<p id="section-4.5-1">
+
+          The llmlingua2 frontend compresses the natural frontend's output
+
+          using LLMLingua-2 (XLM-RoBERTa-large, rate=0.5)
+
+          <span>[<a href="#LLMLingua2" class="cite xref">LLMLingua2</a>]</span>. LLMLingua-2 is the successor to
+
+          LLMLingua <span>[<a href="#LLMLingua" class="cite xref">LLMLingua</a>]</span>, which uses perplexity-based
+
+          compression. It is a lossy compression baseline and does NOT support
+
+          decode. The compression rate (default: 0.5) is configurable.<a href="#section-4.5-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="frontend-round-trip">
+<section id="section-4.6">
+        <h3 id="name-lossless-round-trip-guarant">
+<a href="#section-4.6" class="section-number selfRef">4.6. </a><a href="#name-lossless-round-trip-guarant" class="section-name selfRef">Lossless Round-Trip Guarantee</a>
+        </h3>
+<p id="section-4.6-1">
+
+          For the <code>code</code> and <code>json</code> frontends, the following
+
+          invariant MUST hold for all valid IRs:<a href="#section-4.6-1" class="pilcrow">¶</a></p>
+<div class="lang-pseudocode sourcecode" id="section-4.6-2">
+<pre>&lt;CODE BEGINS&gt; file "round-trip-invariant"
+
+
+decode(compile(ir)) is semantically equivalent to ir
+
+
+&lt;CODE ENDS&gt;</pre><a href="#section-4.6-2" class="pilcrow">¶</a>
+</div>
+<p id="section-4.6-3">
+          "Semantically equivalent" means the decoded IR preserves intent,
+          entities, constraints, and alternatives. This guarantee is
+          semantic, not byte-level: the IR does not define a canonical
+          serialization or byte identity. The <code>meta.req_id</code> of the
+          decoded IR is regenerated from the compiled text via SHA-256
+          hash truncation, so it may differ from the original if the
+          original was not generated by compile. All other fields MUST be
+          preserved. Implementations requiring byte-level canonicalization
+          (e.g., for audit binding) MUST use an external mechanism rather
+          than relying on IR byte identity.<a href="#section-4.6-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="layer-3">
+<section id="section-5">
+      <h2 id="name-layer-3-meta-protocol-layer">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-layer-3-meta-protocol-layer" class="section-name selfRef">Layer 3: Meta-Protocol Layer</a>
+      </h2>
+<p id="section-5-1">
+
+        The meta-protocol layer handles dynamic frontend negotiation,
+
+        session management, error codes, and degradation chains. This
+
+        section specifies the error code registry and session management
+
+        parameters. Frontend negotiation via <code>//ping</code> probes is
+
+        partially specified.<a href="#section-5-1" class="pilcrow">¶</a></p>
+<div id="error-codes">
+<section id="section-5.1">
+        <h3 id="name-error-codes">
+<a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-error-codes" class="section-name selfRef">Error Codes</a>
+        </h3>
+<p id="section-5.1-1">
+
+          SILP defines the following payload-decode error codes. These
+
+          exist ONLY in the payload-decode sub-layer and do NOT replace
+
+          the outer MCP/A2A JSON-RPC error mechanism.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+<span id="name-silp-error-codes"></span><div id="tab-error-codes">
+<table class="center" id="table-10">
+          <caption>
+<a href="#table-10" class="selfRef">Table 10</a>:
+<a href="#name-silp-error-codes" class="selfRef">SILP Error Codes</a>
+          </caption>
+<thead>
+            <tr>
+              <th class="text-left" rowspan="1" colspan="1">Code</th>
+              <th class="text-left" rowspan="1" colspan="1">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>invalid_syntax</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">The payload does not conform to the expected frontend syntax.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>unsupported_version</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">The <code>silp</code> version field indicates a version not supported by the receiver.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>unsupported_frontend</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">The requested frontend is not implemented by the receiver.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>decode_failed</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">The receiver attempted to decode the payload but the decoding process failed.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>timeout</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">The session or request exceeded its time limit.</td>
+            </tr>
+            <tr>
+              <td class="text-left" rowspan="1" colspan="1">
+                <code>session_expired</code>
+</td>
+              <td class="text-left" rowspan="1" colspan="1">The session ID is no longer valid.</td>
+            </tr>
+          </tbody>
+        </table>
+</div>
+</section>
+</div>
+<div id="session-management">
+<section id="section-5.2">
+        <h3 id="name-session-management">
+<a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-session-management" class="section-name selfRef">Session Management</a>
+        </h3>
+<p id="section-5.2-1">
+
+          In stateful mode, SILP sessions are identified by 2-character
+
+          session IDs. The <code>N</code> parameter controls heartbeat renewal
+
+          frequency: every N turns, the session context is reset. The
+
+          following N values are defined:<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+<ul class="compact">
+<li class="compact" id="section-5.2-2.1">
+            <code>N=1</code>: Stateless (context resets every turn).<a href="#section-5.2-2.1" class="pilcrow">¶</a>
+</li>
+          <li class="compact" id="section-5.2-2.2">
+            <code>N=5</code>: Heartbeat every 5 turns.<a href="#section-5.2-2.2" class="pilcrow">¶</a>
+</li>
+          <li class="compact" id="section-5.2-2.3">
+            <code>N=10</code>: Heartbeat every 10 turns.<a href="#section-5.2-2.3" class="pilcrow">¶</a>
+</li>
+          <li class="compact" id="section-5.2-2.4">
+            <code>N=15</code>: Heartbeat every 15 turns.<a href="#section-5.2-2.4" class="pilcrow">¶</a>
+</li>
+          <li class="compact" id="section-5.2-2.5">
+            <code>N=20</code>: Heartbeat every 20 turns.<a href="#section-5.2-2.5" class="pilcrow">¶</a>
+</li>
+          <li class="compact" id="section-5.2-2.6">
+            <code>N=9999</code>: No heartbeat (maximum context accumulation, stateful throughout).<a href="#section-5.2-2.6" class="pilcrow">¶</a>
+</li>
+        </ul>
+</section>
+</div>
+<div id="negotiation">
+<section id="section-5.3">
+        <h3 id="name-frontend-negotiation">
+<a href="#section-5.3" class="section-number selfRef">5.3. </a><a href="#name-frontend-negotiation" class="section-name selfRef">Frontend Negotiation</a>
+        </h3>
+<p id="section-5.3-1">
+
+          SILP supports dynamic frontend negotiation via a <code>//ping</code>
+
+          probe. A sender sends a <code>//ping</code> message listing its
+
+          supported frontends. The receiver responds with its supported
+
+          frontends and a preferred frontend. Both parties then use the
+
+          highest-priority mutually supported frontend.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
+<p id="section-5.3-2">
+
+          The negotiation protocol is partially specified. The degradation
+
+          chain defines a fallback order when a negotiated frontend fails:<a href="#section-5.3-2" class="pilcrow">¶</a></p>
+<div class="lang-text sourcecode" id="section-5.3-3">
+<pre>
+
+code -&gt; JSON -&gt; natural language
+
+</pre><a href="#section-5.3-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="layers-4-5">
+<section id="section-6">
+      <h2 id="name-layers-4-and-5-optimization">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-layers-4-and-5-optimization" class="section-name selfRef">Layers 4 and 5: Optimization and Migration (Future Work)</a>
+      </h2>
+<div id="layer-4">
+<section id="section-6.1">
+        <h3 id="name-layer-4-optimization-layer">
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-layer-4-optimization-layer" class="section-name selfRef">Layer 4: Optimization Layer</a>
+        </h3>
+<p id="section-6.1-1">
+
+          Layer 4 defines a multi-objective fitness function for frontend
+
+          selection and IR optimization. The fitness function is:<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+<div class="lang-text sourcecode" id="section-6.1-2">
+<pre>&lt;CODE BEGINS&gt; file "fitness-function"
+
+
+Fitness = alpha * task_success
+
+        + alpha_prime * cross_model_fidelity
+
+        + beta * compression
+
+        - gamma * human_unreadability
+
+        - delta * PPL
+
+        - epsilon * tokenizer_variance
+
+        - zeta * cross_model_ambiguity
+
+
+&lt;CODE ENDS&gt;</pre><a href="#section-6.1-2" class="pilcrow">¶</a>
+</div>
+<p id="section-6.1-3">
+
+          Constrained by alpha + alpha_prime &gt;= 0.6 and a hard fidelity
+
+          floor. This layer is design-only and not yet experimentally
+
+          validated.<a href="#section-6.1-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="layer-5">
+<section id="section-6.2">
+        <h3 id="name-layer-5-migration-layer">
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-layer-5-migration-layer" class="section-name selfRef">Layer 5: Migration Layer</a>
+        </h3>
+<p id="section-6.2-1">
+
+          Layer 5 is a proposed migration screening layer intended to test
+
+          ranking preservation: if small models and API-reported endpoints
+
+          rank frontends similarly (high Spearman rho), small models
+
+          could serve as proxies for frontend evaluation. This layer is
+
+          not yet validated.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="transport">
+<section id="section-7">
+      <h2 id="name-relationship-to-existing-ag">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-relationship-to-existing-ag" class="section-name selfRef">Relationship to Existing Agent Protocols</a>
+      </h2>
+<p id="section-7-1">
+        SILP is designed as a payload-layer codec that complements
+        existing agent protocols. It does not define its own transport
+        mechanism, discovery protocol, or tool-calling interface.
+        Instead, SILP-encoded strings can be embedded within the payload
+        fields of multiple existing protocols without modifying their
+        semantics. The following table summarizes the relationship:<a href="#section-7-1" class="pilcrow">¶</a></p>
+<span id="name-silp-relationship-to-existi"></span><div id="tab-protocol-comparison">
+<table class="center" id="table-11">
+        <caption>
+<a href="#table-11" class="selfRef">Table 11</a>:
+<a href="#name-silp-relationship-to-existi" class="selfRef">SILP Relationship to Existing Agent Protocols</a>
+        </caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Protocol</th>
+            <th class="text-left" rowspan="1" colspan="1">Problem Solved</th>
+            <th class="text-left" rowspan="1" colspan="1">Relationship to SILP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">AIDIP</td>
+            <td class="text-left" rowspan="1" colspan="1">Agent discovery and invocation (metadata, search, RESTful invoke)</td>
+            <td class="text-left" rowspan="1" colspan="1">Complementary: SILP can encode the <code>inputs</code> and <code>outputs</code> fields of AIDIP invocations</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">A2A</td>
+            <td class="text-left" rowspan="1" colspan="1">Agent-to-agent task lifecycle, message transport, artifact exchange</td>
+            <td class="text-left" rowspan="1" colspan="1">Complementary: SILP can be embedded in A2A <code>task</code>, <code>message</code>, or <code>artifact</code> fields</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">MCP</td>
+            <td class="text-left" rowspan="1" colspan="1">Agent-to-tool invocation protocol</td>
+            <td class="text-left" rowspan="1" colspan="1">Complementary: SILP can encode the <code>params</code> field of MCP JSON-RPC requests</td>
+          </tr>
+        </tbody>
+      </table>
+</div>
+<div id="aidip-integration">
+<section id="section-7.1">
+        <h3 id="name-aidip-integration">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-aidip-integration" class="section-name selfRef">AIDIP Integration</a>
+        </h3>
+<p id="section-7.1-1">
+          The AI Agent Discovery and Invocation Protocol (AIDIP), as
+          discussed in recent IETF work, defines a RESTful interface
+          for agent discovery (<code>POST /agents/search</code>) and
+          invocation (<code>POST /agents/{id}/invoke</code>). AIDIP's
+          invocation interface accepts an <code>inputs</code> field
+          containing the task description. A SILP-encoded string can
+          replace the natural-language <code>inputs</code> content, providing
+          cross-model semantic consistency without modifying AIDIP's
+          discovery or invocation semantics.<a href="#section-7.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="mcp-integration">
+<section id="section-7.2">
+        <h3 id="name-mcp-integration">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-mcp-integration" class="section-name selfRef">MCP Integration</a>
+        </h3>
+<p id="section-7.2-1">
+          In MCP <span>[<a href="#MCP" class="cite xref">MCP</a>]</span>, a SILP payload is carried inside the
+          <code>params</code> field of a JSON-RPC request. Rather than
+          replacing the entire <code>params</code> object, SILP content
+          SHOULD be wrapped in a dedicated field so that the tool's
+          input schema contract is preserved:<a href="#section-7.2-1" class="pilcrow">¶</a></p>
+<div class="lang-json sourcecode" id="section-7.2-2">
+<pre>
+{
+  "silp_encoding": "code",
+  "silp_payload": "if !rain(t+1): start(hike)",
+  ...other tool params...
+}
+</pre><a href="#section-7.2-2" class="pilcrow">¶</a>
+</div>
+<p id="section-7.2-3">
+          This allows SILP-encoded instructions to coexist with
+          structured tool parameters without breaking type contracts.<a href="#section-7.2-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="a2a-integration">
+<section id="section-7.3">
+        <h3 id="name-a2a-integration">
+<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-a2a-integration" class="section-name selfRef">A2A Integration</a>
+        </h3>
+<p id="section-7.3-1">
+          In A2A <span>[<a href="#A2A" class="cite xref">A2A</a>]</span>, a SILP payload is carried inside
+          <code>task</code>, <code>message</code>, or <code>artifact</code> fields.
+          SILP does not replace A2A's lifecycle management.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="changes">
+<section id="section-8">
+      <h2 id="name-changes-since-00">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-changes-since-00" class="section-name selfRef">Changes since -00</a>
+      </h2>
+<p id="section-8-1">
+        The following changes were made in response to community feedback
+        received on the IETF agent2agent mailing list:<a href="#section-8-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8-2">
+        <li id="section-8-2.1">Clarified that <code>req_id</code> and <code>session_id</code> are
+        correlation conveniences, not security identifiers, and provide
+        no replay protection (Section 8.3).<a href="#section-8-2.1" class="pilcrow">¶</a>
+</li>
+        <li id="section-8-2.2">Renamed "canonical IR" to "reference IR" throughout, and
+        added an explicit statement that the round-trip guarantee is
+        semantic, not byte-level. Byte-level canonicalization is out of
+        scope for SILP (Section 4.6).<a href="#section-8-2.2" class="pilcrow">¶</a>
+</li>
+        <li id="section-8-2.3">Softened the verb whitelist security claim: the whitelist is
+        advisory, not enforced by the schema. Implementations requiring
+        strict action-space bounding SHOULD enforce it via schema
+        validation (Section 8.2).<a href="#section-8-2.3" class="pilcrow">¶</a>
+</li>
+        <li id="section-8-2.4">Unified ABNF grammar with code examples: replaced
+        <code>then</code> with <code>:</code> in Example 4 to match the grammar
+        (Section 4.1).<a href="#section-8-2.4" class="pilcrow">¶</a>
+</li>
+        <li id="section-8-2.5">Removed the undefined <code>math</code> frontend from the
+        degradation chain. The chain is now <code>code -&gt; JSON -&gt;
+        natural language</code> (Section 5.3).<a href="#section-8-2.5" class="pilcrow">¶</a>
+</li>
+        <li id="section-8-2.6">Introduced an explicit SILP wrapper field
+        (<code>silp_encoding</code> + <code>silp_payload</code>) for MCP
+        integration, preserving the tool's input schema contract
+        (Section 7.2).<a href="#section-8-2.6" class="pilcrow">¶</a>
+</li>
+      </ol>
+</section>
+</div>
+<div id="changes-since-01">
+<section id="section-9">
+      <h2 id="name-changes-since-01">
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-changes-since-01" class="section-name selfRef">Changes since -01</a>
+      </h2>
+<p id="section-9-1">
+        The following changes were made in response to continued
+        community discussion on the IETF agent2agent mailing list:<a href="#section-9-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-9-2">
+        <li id="section-9-2.1">Added a normative "Sequence (seq) Semantics" subsection
+        clarifying that <code>seq</code> expresses strict, unconditional
+        serial order, and that the four recognized ordering keywords
+        (<code>parallel</code>, <code>sequential</code>, <code>reason_first</code>,
+        <code>reason_last</code>) currently carry no defined behavior
+        (Section 3.5.1).<a href="#section-9-2.1" class="pilcrow">¶</a>
+</li>
+      </ol>
+</section>
+</div>
+<div id="changes-since-02">
+<section id="section-10">
+      <h2 id="name-changes-since-02">
+<a href="#section-10" class="section-number selfRef">10. </a><a href="#name-changes-since-02" class="section-name selfRef">Changes since -02</a>
+      </h2>
+<p id="section-10-1">
+        The following editorial change was made:<a href="#section-10-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-10-2">
+        <li id="section-10-2.1">Added an acknowledgment of Iman Schrock (EMILIA Protocol)
+        for technical review that informed the security clarifications
+        and seq ordering semantics (Appendix C).<a href="#section-10-2.1" class="pilcrow">¶</a>
+</li>
+      </ol>
+</section>
+</div>
+<div id="security">
+<section id="section-11">
+      <h2 id="name-security-considerations">
+<a href="#section-11" class="section-number selfRef">11. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+      </h2>
+<div id="sec-zero-width">
+<section id="section-11.1">
+        <h3 id="name-zero-width-and-homoglyph-at">
+<a href="#section-11.1" class="section-number selfRef">11.1. </a><a href="#name-zero-width-and-homoglyph-at" class="section-name selfRef">Zero-Width and Homoglyph Attacks</a>
+        </h3>
+<p id="section-11.1-1">
+
+          SILP payloads are text-based and therefore susceptible to
+
+          zero-width character injection and homoglyph substitution attacks.
+
+          Testing across six tokenizers (gpt-4o, gpt-3.5, llama-2, qwen2.5,
+
+          claude, gemini) confirmed that 4 types of zero-width characters
+
+          (ZWSP, ZWNJ, ZWJ, BOM) and Latin-to-Cyrillic homoglyph
+
+          substitutions alter tokenization in all 144 probes conducted
+
+          (5 probe verbs for zero-width injection, 2 probe verbs for
+
+          homoglyph substitution, 6 tokenizers).<a href="#section-11.1-1" class="pilcrow">¶</a></p>
+<p id="section-11.1-2">
+
+          Implementations SHOULD sanitize input by stripping zero-width
+
+          characters (U+200B, U+200C, U+200D, U+FEFF) and normalizing
+
+          homoglyphs before processing SILP payloads. However, this does
+
+          not constitute a complete security guarantee -- visual
+
+          invisibility, preprocessing normalization, and downstream parser
+
+          behavior are separate concerns.<a href="#section-11.1-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sec-payload-injection">
+<section id="section-11.2">
+        <h3 id="name-payload-injection">
+<a href="#section-11.2" class="section-number selfRef">11.2. </a><a href="#name-payload-injection" class="section-name selfRef">Payload Injection</a>
+        </h3>
+<p id="section-11.2-1">
+
+                    SILP payloads carry task instructions. Implementations MUST NOT
+          allow SILP payloads to carry content that bypasses safety filters.
+          The verb whitelist (see <a href="#ir-whitelist" class="auto internal xref">Section 3.9</a>) is
+          advisory: it provides a recommended vocabulary of verified
+          single-token verbs. The IR schema's action-code pattern permits
+          any <code>!UPPERCASE_VERB</code>, so the whitelist is descriptive
+          guidance, not a schema-enforced constraint. Implementations
+          requiring strict action-space bounding SHOULD enforce the
+          whitelist via schema validation. External validation is
+          REQUIRED for consequential actions.<a href="#section-11.2-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sec-req-id">
+<section id="section-11.3">
+        <h3 id="name-request-id-collision">
+<a href="#section-11.3" class="section-number selfRef">11.3. </a><a href="#name-request-id-collision" class="section-name selfRef">Request ID Collision</a>
+        </h3>
+<p id="section-11.3-1">
+          The <code>req_id</code> field uses 4-8 hex characters. With 4
+          hex characters (16 bits), the birthday-bound collision probability
+          for n=1,000 requests is approximately 99.9%. Implementations MUST
+          use 8 hex characters (32 bits) as the default to minimize
+          collision risk.<a href="#section-11.3-1" class="pilcrow">¶</a></p>
+<p id="section-11.3-2">
+          The <code>req_id</code> and <code>session_id</code> fields are
+          correlation conveniences, not security identifiers. They
+          provide no replay protection and are not suitable as sole
+          correlation keys without an external uniqueness scope.
+          Implementations requiring replay protection or audit-grade
+          traceability MUST use an external mechanism rather than
+          relying on <code>req_id</code> or <code>session_id</code> alone.<a href="#section-11.3-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sec-model-identity">
+<section id="section-11.4">
+        <h3 id="name-model-identity">
+<a href="#section-11.4" class="section-number selfRef">11.4. </a><a href="#name-model-identity" class="section-name selfRef">Model Identity</a>
+        </h3>
+<p id="section-11.4-1">
+
+          SILP operates through a black-box text interface and does not
+
+          verify the identity of the receiving model. If a proxy misroutes
+
+          requests (e.g., serving a different model for one provider), the
+
+          cross-model comparison would be compromised. This is a known
+
+          limitation of the black-box approach.<a href="#section-11.4-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="sec-lossy-compression">
+<section id="section-11.5">
+        <h3 id="name-lossy-compression-risks">
+<a href="#section-11.5" class="section-number selfRef">11.5. </a><a href="#name-lossy-compression-risks" class="section-name selfRef">Lossy Compression Risks</a>
+        </h3>
+<p id="section-11.5-1">
+
+          The <code>llmlingua2</code> frontend uses lossy ML-based compression
+
+          that may remove or obscure negation markers and entity boundaries.
+
+          Implementations MUST NOT use <code>llmlingua2</code> for payloads
+
+          where semantic precision is critical, particularly for negation
+
+          logic. The <code>code</code> and <code>json</code> frontends are
+
+          RECOMMENDED for all production use.<a href="#section-11.5-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="iana">
+<section id="section-12">
+      <h2 id="name-iana-considerations">
+<a href="#section-12" class="section-number selfRef">12. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+      </h2>
+<p id="section-12-1">
+
+        This document has no IANA actions.<a href="#section-12-1" class="pilcrow">¶</a></p>
+<p id="section-12-2">
+
+        Future versions of this specification may request registration of:<a href="#section-12-2" class="pilcrow">¶</a></p>
+<ul class="compact">
+<li class="compact" id="section-12-3.1">A SILP frontend name registry (e.g., <code>code</code>, <code>json</code>, <code>natural</code>, <code>nl_json</code>, <code>llmlingua2</code>).<a href="#section-12-3.1" class="pilcrow">¶</a>
+</li>
+        <li class="compact" id="section-12-3.2">A SILP error code registry (see <a href="#tab-error-codes" class="auto internal xref">Table 10</a>).<a href="#section-12-3.2" class="pilcrow">¶</a>
+</li>
+        <li class="compact" id="section-12-3.3">A SILP verb whitelist registry (see <a href="#tab-whitelist" class="auto internal xref">Table 7</a>).<a href="#section-12-3.3" class="pilcrow">¶</a>
+</li>
+      </ul>
+</section>
+</div>
+<section id="section-13">
+      <h2 id="name-normative-references">
+<a href="#section-13" class="section-number selfRef">13. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+      </h2>
+<dl class="references">
+<dt id="RFC2119">[RFC2119]</dt>
+      <dd>
+<span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC5234">[RFC5234]</dt>
+      <dd>
+<span class="refAuthor">Crocker, D.</span> and <span class="refAuthor">P. Overell</span>, <span class="refTitle">"Augmented BNF for Syntax Specifications: ABNF"</span>, <span class="seriesInfo">STD 68</span>, <span class="seriesInfo">RFC 5234</span>, <time datetime="2008-01" class="refDate">January 2008</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc5234">https://www.rfc-editor.org/rfc/rfc5234</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8174">[RFC8174]</dt>
+      <dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8259">[RFC8259]</dt>
+    <dd>
+<span class="refAuthor">Bray, T.</span>, <span class="refTitle">"The JavaScript Object Notation (JSON) Data Interchange Format"</span>, <span class="seriesInfo">STD 90</span>, <span class="seriesInfo">RFC 8259</span>, <time datetime="2017-12" class="refDate">December 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8259">https://www.rfc-editor.org/rfc/rfc8259</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+<section id="section-14">
+      <h2 id="name-informative-references">
+<a href="#section-14" class="section-number selfRef">14. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
+      </h2>
+<dl class="references">
+<dt id="A2A">[A2A]</dt>
+      <dd>
+<span class="refAuthor">Google</span>, <span class="refTitle">"Agent2Agent (A2A) Protocol"</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://a2a-protocol.dev">https://a2a-protocol.dev</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="AMR">[AMR]</dt>
+      <dd>
+<span class="refAuthor">Banarescu, L.</span>, <span class="refTitle">"Abstract Meaning Representation for Sembanking"</span>, <span class="refContent">Proceedings of the 7th Linguistic Annotation Workshop, pages 178-186</span>, <time datetime="2013" class="refDate">2013</time>, <span>&lt;<a href="https://aclanthology.org/W13-2322/">https://aclanthology.org/W13-2322/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="LLMLingua">[LLMLingua]</dt>
+      <dd>
+<span class="refAuthor">Jiang, H.</span>, <span class="refAuthor">Wu, Q.</span>, <span class="refAuthor">Lin, C-Y.</span>, <span class="refAuthor">Yang, Y.</span>, and <span class="refAuthor">L. Qiu</span>, <span class="refTitle">"LLMLingua: Compressing Prompts for Accelerated Inference of Large Language Models"</span>, <span class="refContent">EMNLP 2023, pages 13358-13376</span>, <time datetime="2023-12" class="refDate">December 2023</time>, <span>&lt;<a href="https://aclanthology.org/2023.emnlp-main.825/">https://aclanthology.org/2023.emnlp-main.825/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="LLMLingua2">[LLMLingua2]</dt>
+      <dd>
+<span class="refAuthor">Pan, Z.</span>, <span class="refAuthor">Wu, Q.</span>, and <span class="refAuthor">H. Jiang</span>, <span class="refTitle">"LLMLingua-2: Data Distillation for Efficient and Faithful Task-Agnostic Prompt Compression"</span>, <span class="refContent">Findings of ACL 2024. arXiv:2403.12968</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://arxiv.org/abs/2403.12968">https://arxiv.org/abs/2403.12968</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="MCP">[MCP]</dt>
+      <dd>
+<span class="refAuthor">Anthropic</span>, <span class="refTitle">"Model Context Protocol (MCP)"</span>, <time datetime="2024" class="refDate">2024</time>, <span>&lt;<a href="https://modelcontextprotocol.io">https://modelcontextprotocol.io</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SILP-CODE">[SILP-CODE]</dt>
+      <dd>
+<span class="refAuthor">Hwang, J.</span>, <span class="refTitle">"SILP Reference Implementation"</span>, <span class="refContent">GitHub repository: Juwan-Hwang/polyglotir</span>, <time datetime="2026" class="refDate">2026</time>, <span>&lt;<a href="https://github.com/Juwan-Hwang/polyglotir">https://github.com/Juwan-Hwang/polyglotir</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="SILP-PAPER">[SILP-PAPER]</dt>
+    <dd>
+<span class="refAuthor">Hwang, J.</span>, <span class="refTitle">"SILP: A Semantic Interlingua Layer Protocol for Cross-Model Agent Communication"</span>, <span class="refContent">Zenodo. DOI: 10.5281/zenodo.21396849</span>, <time datetime="2026" class="refDate">2026</time>, <span>&lt;<a href="https://doi.org/10.5281/zenodo.21396849">https://doi.org/10.5281/zenodo.21396849</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+</dl>
+</section>
+<div id="appendix-examples">
+<section id="appendix-A">
+      <h2 id="name-ir-examples">
+<a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-ir-examples" class="section-name selfRef">IR Examples</a>
+      </h2>
+<p id="appendix-A-1">
+
+        This appendix provides examples of SILP IR objects and their
+
+        compilation under each frontend. All examples are drawn from the
+
+        27-case test suite described in the accompanying research paper
+
+        <span>[<a href="#SILP-PAPER" class="cite xref">SILP-PAPER</a>]</span>.<a href="#appendix-A-1" class="pilcrow">¶</a></p>
+<div id="example-1">
+<section id="appendix-A.1">
+        <h3 id="name-example-1-negation-logic-wi">
+<a href="#appendix-A.1" class="section-number selfRef">A.1. </a><a href="#name-example-1-negation-logic-wi" class="section-name selfRef">Example 1: Negation Logic with Alternative</a>
+        </h3>
+<div class="lang-json sourcecode" id="appendix-A.1-1">
+<pre>&lt;CODE BEGINS&gt; file "example1-ir"
+
+
+{
+
+  "silp": "v1",
+
+  "intent": "!START",
+
+  "entities": [
+
+    {"id": "act", "value": "hike", "action": "!START"}
+
+  ],
+
+  "constraints": [
+
+    {"type": "!rain", "value": "true", "time": "t+1"}
+
+  ],
+
+  "alternatives": [
+
+    {"action": "!START", "target": "cards", "location": "indoor"}
+
+  ],
+
+  "meta": {"req_id": "a1b2c3d4", "out": "code"}
+
+}
+
+
+&lt;CODE ENDS&gt;</pre><a href="#appendix-A.1-1" class="pilcrow">¶</a>
+</div>
+<p id="appendix-A.1-2">Code frontend output:<a href="#appendix-A.1-2" class="pilcrow">¶</a></p>
+<div class="lang-text sourcecode" id="appendix-A.1-3">
+<pre>
+
+if !rain(t+1): start(hike) else start(cards@indoor)
+
+</pre><a href="#appendix-A.1-3" class="pilcrow">¶</a>
+</div>
+<p id="appendix-A.1-4">JSON frontend output:<a href="#appendix-A.1-4" class="pilcrow">¶</a></p>
+<div class="lang-json sourcecode" id="appendix-A.1-5">
+<pre>
+
+{"intent":"!START",
+ "act":"hike",
+ "constraints":[{"type":"!rain","value":"true","time":"t+1"}],
+ "alternatives":[{"action":"!START","target":"cards",
+  "location":"indoor"}]}
+
+</pre><a href="#appendix-A.1-5" class="pilcrow">¶</a>
+</div>
+<p id="appendix-A.1-6">Natural frontend output:<a href="#appendix-A.1-6" class="pilcrow">¶</a></p>
+<div class="lang-text sourcecode" id="appendix-A.1-7">
+<pre>
+
+If not rain at t+1, start hike otherwise start cards at indoor.
+
+</pre><a href="#appendix-A.1-7" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="example-2">
+<section id="appendix-A.2">
+        <h3 id="name-example-2-multi-constraint-">
+<a href="#appendix-A.2" class="section-number selfRef">A.2. </a><a href="#name-example-2-multi-constraint-" class="section-name selfRef">Example 2: Multi-Constraint with Secondary Action</a>
+        </h3>
+<div class="lang-json sourcecode" id="appendix-A.2-1">
+<pre>&lt;CODE BEGINS&gt; file "example2-ir"
+
+
+{
+
+  "silp": "v1",
+
+  "intent": "!CANCEL",
+
+  "entities": [
+
+    {"id": "act", "value": "flight", "action": "!CANCEL"},
+
+    {"id": "time", "value": "t+1pm", "action": "!CANCEL"},
+
+    {"id": "act", "value": "zhangsan", "action": "!EMAIL"}
+
+  ],
+
+  "constraints": [
+
+    {"type": "loc",
+       "value": "Beijing",
+       "time": "t+1am",
+       "subject": "me"}
+
+  ],
+
+  "alternatives": [],
+
+  "meta": {"req_id": "e5f6g7h8", "out": "code"}
+
+}
+
+
+&lt;CODE ENDS&gt;</pre><a href="#appendix-A.2-1" class="pilcrow">¶</a>
+</div>
+<p id="appendix-A.2-2">Code frontend output:<a href="#appendix-A.2-2" class="pilcrow">¶</a></p>
+<div class="lang-text sourcecode" id="appendix-A.2-3">
+<pre>
+
+if loc(me,Beijing,t+1am): cancel(flight,t+1pm); email(zhangsan)
+
+</pre><a href="#appendix-A.2-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="example-3">
+<section id="appendix-A.3">
+        <h3 id="name-example-3-keyword-arguments">
+<a href="#appendix-A.3" class="section-number selfRef">A.3. </a><a href="#name-example-3-keyword-arguments" class="section-name selfRef">Example 3: Keyword Arguments (Detail Preservation)</a>
+        </h3>
+<div class="lang-json sourcecode" id="appendix-A.3-1">
+<pre>&lt;CODE BEGINS&gt; file "example3-ir"
+
+
+{
+
+  "silp": "v1",
+
+  "intent": "!TRANSLATE",
+
+  "entities": [
+
+    {"id": "src", "value": "fr_rev_bold", "action": "!TRANSLATE"},
+
+    {"id": "tgt", "value": "shakespeare_en", "action": "!TRANSLATE"},
+
+    {"id": "style", "value": "archaic_heavy", "action": "!TRANSLATE"}
+
+  ],
+
+  "constraints": [],
+
+  "alternatives": [],
+
+  "meta": {"req_id": "1a2b3c4d", "out": "code"}
+
+}
+
+
+&lt;CODE ENDS&gt;</pre><a href="#appendix-A.3-1" class="pilcrow">¶</a>
+</div>
+<p id="appendix-A.3-2">Code frontend output:<a href="#appendix-A.3-2" class="pilcrow">¶</a></p>
+<div class="lang-text sourcecode" id="appendix-A.3-3">
+<pre>
+
+translate(src=fr_rev_bold, tgt=shakespeare_en, style=archaic_heavy)
+
+</pre><a href="#appendix-A.3-3" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="example-4">
+<section id="appendix-A.4">
+        <h3 id="name-example-4-nested-constraint">
+<a href="#appendix-A.4" class="section-number selfRef">A.4. </a><a href="#name-example-4-nested-constraint" class="section-name selfRef">Example 4: Nested Constraints</a>
+        </h3>
+<div class="lang-text sourcecode" id="appendix-A.4-1">
+<pre>
+
+if budget&lt;=500 and rating&gt;=4.0: book(hotel,downtown,t+5)
+
+</pre><a href="#appendix-A.4-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+<div id="example-5">
+<section id="appendix-A.5">
+        <h3 id="name-example-5-parallel-actions-">
+<a href="#appendix-A.5" class="section-number selfRef">A.5. </a><a href="#name-example-5-parallel-actions-" class="section-name selfRef">Example 5: Parallel Actions with Sequencing</a>
+        </h3>
+<div class="lang-text sourcecode" id="appendix-A.5-1">
+<pre>
+
+fetch(data) -&gt; process -&gt; email(result) with timeout
+
+</pre><a href="#appendix-A.5-1" class="pilcrow">¶</a>
+</div>
+</section>
+</div>
+</section>
+</div>
+<div id="appendix-tokens">
+<section id="appendix-B">
+      <h2 id="name-structural-token-verificati">
+<a href="#appendix-B" class="section-number selfRef">Appendix B. </a><a href="#name-structural-token-verificati" class="section-name selfRef">Structural Token Verification</a>
+      </h2>
+<p id="appendix-B-1">
+
+        The following 12 structural tokens are verified to be single-token
+
+        on all 6 production tokenizers (gpt-4o, gpt-3.5, llama-2, qwen2.5,
+
+        claude, gemini) with zero UNK occurrences. The complete census
+
+        data is available in the reference implementation
+
+        <span>[<a href="#SILP-CODE" class="cite xref">SILP-CODE</a>]</span>.<a href="#appendix-B-1" class="pilcrow">¶</a></p>
+<span id="name-structural-tokens-all-singl"></span><div id="tab-structural-tokens">
+<table class="center" id="table-12">
+        <caption>
+<a href="#table-12" class="selfRef">Table 12</a>:
+<a href="#name-structural-tokens-all-singl" class="selfRef">Structural Tokens (All Single-Token, Zero UNK, Across 6 Tokenizers)</a>
+        </caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Token</th>
+            <th class="text-left" rowspan="1" colspan="1">Category</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>if</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Conditional</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>else</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Conditional</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>and</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Logical</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>not</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Logical</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>(</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Delimiter</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>)</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Delimiter</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>,</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Delimiter</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>;</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Delimiter</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>:</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Delimiter</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>!</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Negation prefix</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>@</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Location qualifier</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">
+              <code>-&gt;</code>
+</td>
+            <td class="text-left" rowspan="1" colspan="1">Sequencing</td>
+          </tr>
+        </tbody>
+      </table>
+</div>
+</section>
+</div>
+<div id="acknowledgements">
+<section id="appendix-C">
+      <h2 id="name-acknowledgements">
+<a href="#appendix-C" class="section-number selfRef">Appendix C. </a><a href="#name-acknowledgements" class="section-name selfRef">Acknowledgements</a>
+      </h2>
+<p id="appendix-C-1">
+
+        The SILP protocol design was informed by empirical research
+
+        documented in the accompanying research paper
+
+        <span>[<a href="#SILP-PAPER" class="cite xref">SILP-PAPER</a>]</span>. The reference implementation is
+
+        available as open source <span>[<a href="#SILP-CODE" class="cite xref">SILP-CODE</a>]</span>.<a href="#appendix-C-1" class="pilcrow">¶</a></p>
+<p id="appendix-C-2">
+        The author thanks Iman Schrock (EMILIA Protocol) for detailed
+        technical review on the IETF agent2agent mailing list, which
+        directly informed the security clarifications in <a href="#security" class="auto internal xref">Section 11</a>, the "Sequence (seq) Semantics" defined in
+        <a href="#seq-semantics" class="auto internal xref">Section 3.6</a>, and the broader discussion of
+        SILP-to-CAID field mapping.<a href="#appendix-C-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="authors-addresses">
+<section id="appendix-D">
+      <h2 id="name-authors-address">
+<a href="#name-authors-address" class="section-name selfRef">Author's Address</a>
+      </h2>
+<address class="vcard">
+        <div dir="auto" class="left"><span class="fn nameRole">Juwan Hwang</span></div>
+<div dir="auto" class="left"><span class="org">Shanghai Maritime University</span></div>
+<div dir="auto" class="left"><span class="street-address">1550 Haigang Av.</span></div>
+<div dir="auto" class="left"><span class="locality">Shanghai</span></div>
+<div dir="auto" class="left"><span class="postal-code">201306</span></div>
+<div dir="auto" class="left"><span class="country-name">China</span></div>
+<div class="email">
+<span>Email:</span>
+<a href="mailto:huangzhiwen@stu.shmtu.edu.cn" class="email">huangzhiwen@stu.shmtu.edu.cn</a>
+</div>
+<div class="url">
+<span>URI:</span>
+<a href="https://github.com/Juwan-Hwang" class="url">https://github.com/Juwan-Hwang</a>
+</div>
+</address>
+</section>
+</div>
+<script>const toc = document.getElementById("toc");
+toc.querySelector("h2").addEventListener("click", e => {
+  toc.classList.toggle("active");
+});
+toc.querySelector("nav").addEventListener("click", e => {
+  toc.classList.remove("active");
+});
+</script>
+</body>
+</html>
