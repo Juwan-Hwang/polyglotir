@@ -1,0 +1,2242 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE rfc [
+  <!ENTITY nbsp    "&#160;">
+
+  <!ENTITY zwsp    "&#8203;">
+
+  <!ENTITY nbhy    "&#8209;">
+
+  <!ENTITY wj      "&#8288;">
+]>
+
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude"
+
+     submissionType="independent"
+
+     ipr="trust200902"
+
+     category="info"
+
+     docName="draft-hwang-silp-protocol-02"
+
+     version="3"
+
+     sortRefs="true"
+
+     symRefs="true"
+
+     tocDepth="3"
+
+     indexInclude="true">
+
+  <!-- ======================== FRONT MATTER ======================== -->
+
+  <front>
+
+    <title abbrev="SILP Protocol">Semantic Interlingua Layer Protocol (SILP): A Payload Codec for Cross-Model Agent Communication</title>
+
+    <author fullname="Juwan Hwang" initials="J." surname="Hwang">
+
+      <organization>Shanghai Maritime University</organization>
+
+      <address>
+        <postal>
+          <street>1550 Haigang Av.</street>
+          <city>Shanghai</city>
+          <code>201306</code>
+          <country>CN</country>
+        </postal>
+        <email>huangzhiwen@stu.shmtu.edu.cn</email>
+        <uri>https://github.com/Juwan-Hwang</uri>
+      </address>
+
+    </author>
+
+    <date year="2026" month="July" day="21"/>
+
+    <area>General</area>
+
+    <workgroup>Independent Submission</workgroup>
+
+    <keyword>LLM</keyword>
+
+    <keyword>agent communication</keyword>
+
+    <keyword>protocol</keyword>
+
+    <keyword>interlingua</keyword>
+
+    <keyword>prompt compression</keyword>
+
+    <keyword>MCP</keyword>
+
+    <keyword>A2A</keyword>
+
+    <abstract>
+
+      <t>
+
+        This document specifies the Semantic Interlingua Layer Protocol (SILP),
+
+        a black-box, text-interface payload codec designed for cross-model
+
+        agent-to-agent communication. SILP defines a coarse-grained action-slot
+
+        intermediate representation (IR) as the reference semantic layer and
+
+        compiles it into multiple pluggable surface frontends -- code-like
+
+        function-call syntax, pure JSON, natural language, and ML-compressed
+
+        text. SILP is designed as a payload-layer option within existing agent
+
+        transport protocols such as the Model Context Protocol (MCP) and
+
+        Agent-to-Agent (A2A) protocol, which define transport envelopes and
+
+        capability discovery but leave payload encoding unspecified.
+
+      </t>
+
+      <t>
+
+        SILP provides compile/decode round-trip guarantees for lossless
+
+        frontends, dynamic frontend negotiation via probe messages, session
+
+        management with heartbeat renewal, and a verb whitelist verified
+
+        across six production tokenizers for cross-model token-level stability.
+
+      </t>
+
+      <t>
+
+        This document is a product of independent research and is not an IETF
+
+        standard. It is published as an Informational document to establish a
+
+        stable reference for implementers.
+
+      </t>
+
+    </abstract>
+
+  </front>
+
+  <!-- ======================== MIDDLE ======================== -->
+
+  <middle>
+
+    <!-- ======================== Section 1: Introduction ======================== -->
+
+    <section anchor="introduction">
+
+      <name>Introduction</name>
+
+      <t>
+
+        The rise of agentic AI systems has created a new communication
+
+        paradigm: large language models (LLMs) conversing not with humans,
+
+        but with other LLMs through structured text protocols. Frameworks
+
+        such as the Model Context Protocol (MCP) <xref target="MCP"/> and
+
+        Agent-to-Agent (A2A) protocol <xref target="A2A"/> define transport
+
+        envelopes and capability discovery, but leave a critical gap: how
+
+        should the semantic payload itself be encoded?
+
+      </t>
+
+      <t>
+
+        Current practice defaults to uncompressed natural language, which is
+
+        token-inefficient, tokenizer-dependent, and semantically ambiguous
+
+        -- particularly for negation logic, multi-step action chains,
+
+        and conditional branching. SILP addresses this gap by defining a
+
+        protocol layer that compiles a reference intermediate representation
+
+        (IR) into multiple surface encodings, each designed to exploit the
+
+        shared training priors of contemporary LLMs. The concept of an
+
+        interlingua -- an intermediate representation that mediates between
+
+        input and output languages -- has a long history in machine
+
+        translation; Abstract Meaning Representation (AMR) <xref target="AMR"/>
+
+        is a notable graph-semantic example. SILP adapts this concept to the
+
+        LLM-agent domain: the IR is the interlingua, and frontends are the
+
+        surface encodings compiled from it.
+
+            </t>
+
+      <t>
+        Recent IETF discussions have begun addressing the agent protocol
+        ecosystem at multiple layers. The AI Agent Discovery and
+        Invocation Protocol (AIDIP) defines how agents are discovered
+        and invoked (agent metadata, registration, search, and a
+        RESTful invocation interface). The Agent-to-Agent (A2A) protocol
+        defines task lifecycle, message transport, and artifact exchange
+        between agents. The Model Context Protocol (MCP) defines how
+        agents invoke external tools. However, these protocols all leave
+        the encoding of semantic payload content to the implementer.
+        SILP fills this gap: it is not a competing transport or
+        discovery protocol, but a payload-layer codec that can be
+        embedded within the message fields of A2A, MCP, or AIDIP-based
+        systems to ensure cross-model semantic consistency.
+      </t>
+
+      <section anchor="scope">
+        <name>Scope</name>
+
+        <t>
+
+          SILP is a payload-layer codec. It does not replace transport
+
+          protocols, lifecycle management, or capability discovery. SILP
+
+          payloads are designed to be carried inside MCP's <tt>params</tt>
+
+          field or A2A's <tt>task/message/artifact</tt> fields without
+
+          modifying their semantics.
+
+        </t>
+
+        <t>
+
+          SILP operates through a pure text interface. It does not access
+
+          or manipulate model-internal latent representations. All encodings
+
+          produced by lossless frontends are auditable and decodable back to
+
+          the reference IR.
+
+        </t>
+
+      </section>
+
+      <section anchor="terminology">
+
+        <name>Terminology</name>
+
+        <t>
+
+          The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+
+          "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY",
+
+          and "OPTIONAL" in this document are to be interpreted as described
+
+          in BCP 14 <xref target="RFC2119"/> <xref target="RFC8174"/> when,
+
+          and only when, they appear in all capitals, as shown here.
+
+        </t>
+
+        <dl newline="true">
+
+          <dt>IR (Intermediate Representation):</dt>
+
+          <dd>The reference semantic payload defined in <xref target="layer-1"/>. All frontends compile from and decode to this representation.</dd>
+
+          <dt>Frontend:</dt>
+
+          <dd>A specific surface encoding of the IR (e.g., code-like syntax, JSON, natural language). See <xref target="layer-2"/>.</dd>
+
+          <dt>Compile:</dt>
+
+          <dd>The process of converting an IR to a surface string via a frontend.</dd>
+
+          <dt>Decode:</dt>
+
+          <dd>The process of recovering an IR from a surface string via a frontend.</dd>
+
+          <dt>Lossless frontend:</dt>
+
+          <dd>A frontend where <tt>decode(compile(ir))</tt> produces an IR semantically equivalent to the original for all valid IRs.</dd>
+
+          <dt>Action code:</dt>
+
+          <dd>An IR primitive following the format <tt>!</tt> + <tt>UPPERCASE_VERB</tt> (e.g., <tt>!CANCEL</tt>).</dd>
+
+          <dt>Session:</dt>
+
+          <dd>A stateful conversation context between two or more agents, identified by a session ID.</dd>
+
+          <dt>Heartbeat:</dt>
+
+          <dd>A session renewal mechanism that resets accumulated context every N turns.</dd>
+
+        </dl>
+
+      </section>
+
+      <section anchor="design-principles">
+
+        <name>Design Principles</name>
+
+        <ol spacing="normal">
+
+          <li><strong>Protocol, not compression:</strong> SILP is a protocol layer with lossless round-trip guarantees. Compression is a side effect of compact encoding, not the primary goal.</li>
+
+          <li><strong>Black-box text interface:</strong> SILP does not require model-internal access, fine-tuning, or latent representation manipulation. It operates purely through text that LLMs process during inference.</li>
+
+          <li><strong>Tokenizer-aware vocabulary:</strong> The verb whitelist is verified to be single-token and UNK-free across six production tokenizers, ensuring cross-model token-level stability.</li>
+
+          <li><strong>Auditability:</strong> All lossless frontend encodings can be decoded back to the reference IR. The compile.lock mechanism provides tamper-evident first-pass freezing.</li>
+
+          <li><strong>Extensibility:</strong> The IR root is strict (<tt>extra="forbid"</tt>) while sub-models allow extra fields. Receivers MUST silently ignore unknown fields in extensible sub-models.</li>
+
+        </ol>
+
+      </section>
+
+    </section>
+
+    <!-- ======================== Section 2: Protocol Architecture ======================== -->
+
+    <section anchor="architecture">
+
+      <name>Protocol Architecture</name>
+
+      <t>
+
+        SILP is a five-layer protocol stack. Layers 1 and 2 are fully
+
+        specified in this document. Layer 3 is partially specified.
+
+        Layers 4 and 5 are design-level and reserved for future work.
+
+      </t>
+
+      <table anchor="tab-layers">
+        <name>SILP Five-Layer Stack</name>
+
+        <thead>
+
+          <tr><th>Layer</th><th>Name</th><th>Module</th><th>Description</th><th>Status</th></tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr><td>1</td><td>Application</td><td><tt>silp.ir</tt></td><td>Semantic IR (action-slot structure)</td><td>Specified</td></tr>
+
+          <tr><td>2</td><td>Surface</td><td><tt>silp.frontend</tt></td><td>Pluggable frontends (code, JSON, natural, nl_json, llmlingua2)</td><td>Specified</td></tr>
+
+          <tr><td>3</td><td>Meta-protocol</td><td><tt>silp.negotiation</tt></td><td>Frontend negotiation, session management, error codes</td><td>Partially specified</td></tr>
+
+          <tr><td>4</td><td>Optimization</td><td><tt>silp.bench</tt></td><td>Multi-objective fitness function + genetic algorithm</td><td>Future work</td></tr>
+
+          <tr><td>5</td><td>Migration</td><td><tt>silp.bench</tt></td><td>Small-model screening proxy for frontend evaluation</td><td>Future work</td></tr>
+
+        </tbody>
+
+      </table>
+
+    </section>
+
+    <!-- ======================== Section 3: Layer 1 -?IR ======================== -->
+
+    <section anchor="layer-1">
+
+      <name>Layer 1: Application Layer (Semantic IR)</name>
+
+      <t>
+
+        The reference intermediate representation is a JSON-serialized
+
+        action-slot structure. It is the single source of semantic truth:
+
+        all frontends compile from this IR and decode back to it. The IR
+
+        is defined as a JSON Schema with strict validation at the root
+
+        level and extensible sub-models.
+
+      </t>
+
+      <section anchor="ir-root">
+
+        <name>Root IR Object</name>
+
+        <t>
+
+          The root IR object (<tt>SilpIR</tt>) MUST contain the following
+
+          fields. Unknown fields at the root level are forbidden
+
+          (<tt>extra="forbid"</tt>).
+
+        </t>
+
+        <table anchor="tab-ir-fields">
+        <name>Root IR Fields</name>
+
+          <thead>
+
+            <tr><th>Field</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr><td><tt>silp</tt></td><td>string</td><td>No</td><td><tt>"v1"</tt></td><td>Protocol version. MUST match <tt>^v\d+$</tt>.</td></tr>
+
+            <tr><td><tt>version</tt></td><td>string</td><td>No</td><td><tt>"ir-v0.1"</tt></td><td>IR schema version.</td></tr>
+
+            <tr><td><tt>intent</tt></td><td>string</td><td>Yes</td><td>--</td><td>Main action code. MUST match <tt>^![A-Z][A-Z_]*$</tt>.</td></tr>
+
+            <tr><td><tt>entities</tt></td><td>array of Entity</td><td>No</td><td><tt>[]</tt></td><td>Argument slots and secondary actions.</td></tr>
+
+            <tr><td><tt>constraints</tt></td><td>array of Constraint</td><td>No</td><td><tt>[]</tt></td><td>Conditions on the task.</td></tr>
+
+            <tr><td><tt>alternatives</tt></td><td>array of Alternative</td><td>No</td><td><tt>[]</tt></td><td>Fallback actions (else-branch).</td></tr>
+
+            <tr><td><tt>meta</tt></td><td>Meta object</td><td>Yes</td><td>--</td><td>Protocol-level metadata.</td></tr>
+
+          </tbody>
+
+        </table>
+
+      </section>
+
+      <section anchor="ir-entity">
+
+        <name>Entity Object</name>
+
+        <t>
+
+          An entity represents an argument slot. If the <tt>action</tt>
+
+          field matches the root <tt>intent</tt>, the entity is an argument
+
+          to the primary action. If <tt>action</tt> differs from
+
+          <tt>intent</tt>, it is a secondary action (e.g.,
+
+          <tt>email(zhangsan)</tt> alongside <tt>cancel(flight)</tt>).
+
+        </t>
+
+        <t>
+
+          The Entity object allows extra fields (<tt>extra="allow"</tt>).
+
+          Receivers MUST silently ignore unknown Entity fields.
+
+        </t>
+
+        <table anchor="tab-entity-fields">
+        <name>Entity Fields</name>
+
+          <thead>
+
+            <tr><th>Field</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr><td><tt>id</tt></td><td>string</td><td>Yes</td><td>--</td><td>Slot identifier. <tt>"act"</tt> indicates a positional argument.</td></tr>
+
+            <tr><td><tt>value</tt></td><td>string</td><td>Yes</td><td>--</td><td>The slot value.</td></tr>
+
+            <tr><td><tt>action</tt></td><td>string (optional)</td><td>No</td><td><tt>null</tt></td><td>Action code if this entity belongs to a secondary action. MUST match <tt>^![A-Z][A-Z_]*$</tt>.</td></tr>
+
+          </tbody>
+
+        </table>
+
+      </section>
+
+      <section anchor="ir-constraint">
+
+        <name>Constraint Object</name>
+
+        <t>
+
+          A constraint represents a condition on the task. Convention for
+
+          negation: prefix the <tt>type</tt> field with <tt>!</tt> (e.g.,
+
+          <tt>"!rain"</tt>) to produce <tt>!rain(t+1)</tt> in the code
+
+          frontend.
+
+        </t>
+
+        <t>
+
+          The Constraint object allows extra fields
+
+          (<tt>extra="allow"</tt>). Common extra fields include
+
+          <tt>subject</tt> (first positional argument in function-call
+
+          constraints) and <tt>operator</tt> (infix operator such as
+
+          <tt>&gt;</tt>, <tt>&lt;=</tt>). Receivers MUST silently ignore
+
+          unknown Constraint fields.
+
+        </t>
+
+        <table anchor="tab-constraint-fields">
+        <name>Constraint Fields</name>
+
+          <thead>
+
+            <tr><th>Field</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr><td><tt>type</tt></td><td>string</td><td>Yes</td><td>--</td><td>Constraint type. Prefix <tt>!</tt> for negation.</td></tr>
+
+            <tr><td><tt>value</tt></td><td>string</td><td>Yes</td><td>--</td><td>Constraint value.</td></tr>
+
+            <tr><td><tt>time</tt></td><td>string (optional)</td><td>No</td><td><tt>null</tt></td><td>Temporal reference, e.g., <tt>"t+1"</tt>, <tt>"t+1am"</tt>.</td></tr>
+
+          </tbody>
+
+        </table>
+
+      </section>
+
+      <section anchor="ir-alternative">
+
+        <name>Alternative Object</name>
+
+        <t>
+
+          An alternative represents a fallback action (else-branch) executed
+
+          when constraints are not met. The Alternative object allows extra
+
+          fields (<tt>extra="allow"</tt>).
+
+        </t>
+
+        <table anchor="tab-alternative-fields">
+        <name>Alternative Fields</name>
+
+          <thead>
+
+            <tr><th>Field</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr><td><tt>action</tt></td><td>string</td><td>Yes</td><td>--</td><td>Action code. MUST match <tt>^![A-Z][A-Z_]*$</tt>.</td></tr>
+
+            <tr><td><tt>target</tt></td><td>string (optional)</td><td>No</td><td><tt>null</tt></td><td>Target entity of the fallback action.</td></tr>
+
+            <tr><td><tt>location</tt></td><td>string (optional)</td><td>No</td><td><tt>null</tt></td><td>Location qualifier for the fallback.</td></tr>
+
+          </tbody>
+
+        </table>
+
+      </section>
+
+      <section anchor="ir-meta">
+
+        <name>Meta Object</name>
+
+        <t>
+
+          The Meta object carries protocol-level metadata. It allows extra
+
+          fields (<tt>extra="allow"</tt>) for forward compatibility.
+
+          Receivers MUST silently ignore unknown Meta fields.
+
+        </t>
+
+        <table anchor="tab-meta-fields">
+        <name>Meta Fields</name>
+
+          <thead>
+
+            <tr><th>Field</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr><td><tt>req_id</tt></td><td>string</td><td>Yes</td><td>--</td><td>Request identifier. MUST match <tt>^[a-f0-9]{4,8}$</tt>. Default length: 8 hex chars (32 bits). 4 hex chars permitted only in scope-limited sessions.</td></tr>
+
+            <tr><td><tt>session_id</tt></td><td>string (optional)</td><td>No</td><td><tt>null</tt></td><td>2-character session identifier for stateful mode.</td></tr>
+
+            <tr><td><tt>priority</tt></td><td>integer</td><td>No</td><td><tt>0</tt></td><td>Priority level.</td></tr>
+
+            <tr><td><tt>confidence</tt></td><td>float</td><td>No</td><td><tt>1.0</tt></td><td>Confidence score in range [0.0, 1.0].</td></tr>
+
+            <tr><td><tt>seq</tt></td><td>array of string</td><td>No</td><td><tt>[]</tt></td><td>Sequence of action codes for multi-step tasks.</td></tr>
+
+            <tr><td><tt>out</tt></td><td>string</td><td>No</td><td><tt>"natural"</tt></td><td>Output format hint for the receiver.</td></tr>
+
+            <tr><td><tt>next_agent</tt></td><td>string (optional)</td><td>No</td><td><tt>null</tt></td><td>Routing hint for the next agent.</td></tr>
+
+          </tbody>
+
+        </table>
+
+      </section>
+
+      <section anchor="seq-semantics">
+        <name>Sequence (seq) Semantics</name>
+        <t>
+          The <tt>seq</tt> field expresses strict, unconditional serial
+          execution order. If <tt>seq</tt> is present and non-empty,
+          implementations MUST preserve the specified order when
+          executing the referenced actions. Reordering constitutes a
+          materially different task.
+        </t>
+        <t>
+          The validator recognizes four ordering keywords as valid
+          entries in the <tt>seq</tt> array: <tt>parallel</tt>,
+          <tt>sequential</tt>, <tt>reason_first</tt>, and
+          <tt>reason_last</tt>. These keywords are currently recognized
+          tokens only -- this specification does NOT define any behavior
+          associated with them. In particular, the presence of
+          <tt>parallel</tt> does NOT relax the ordering requirement
+          above. Implementations MUST NOT infer parallel, conditional,
+          or other execution semantics from these keywords. A future
+          revision of this document MAY define normative behavior for
+          one or more of these keywords; until such behavior is
+          specified, receivers encountering them SHOULD treat their
+          semantic effect as undefined and MAY reject or flag payloads
+          that rely on unspecified keyword behavior.
+        </t>
+        <t>
+          Conditional branching is expressed via <tt>constraints</tt>
+          and <tt>alternatives</tt>, not via <tt>seq</tt>. The
+          <tt>seq</tt> field governs execution order only.
+        </t>
+      </section>
+
+      <section anchor="ir-req-id">
+
+        <name>Request ID (req_id) Collision Requirements</name>
+
+        <t>
+
+          The <tt>req_id</tt> field is a hexadecimal hash used for request
+
+          correlation. Based on collision testing (n=1,000 simulated IDs
+
+          per condition):
+
+        </t>
+
+        <ul spacing="compact">
+
+          <li>4 hex chars (16 bits): 995 unique IDs, 5 collisions, 0.5% duplicate fraction. Permitted ONLY for short-lived, scope-limited sessions.</li>
+
+          <li>6 hex chars (24 bits): 1,000 unique IDs, 0 collisions, 0.0% duplicate fraction. Not recommended as default due to birthday-bound collision probability at scale.</li>
+
+          <li>8 hex chars (32 bits): 1,000 unique IDs, 0 collisions, 0.0% duplicate fraction. This is the recommended default.</li>
+
+        </ul>
+
+        <t>
+
+          Implementations MUST use 8 hex characters as the default
+
+          <tt>req_id</tt> length. Implementations MAY use 4 hex characters
+
+          only when the session is scope-limited and the total number of
+
+          concurrent requests is known to be small.
+
+        </t>
+
+        <t>
+
+          Note: duplicate fraction is not the same as the probability of at
+
+          least one collision. In 16-bit space, the birthday-bound collision
+
+          probability for n=1,000 is approximately 99.9%.
+
+        </t>
+
+      </section>
+
+      <section anchor="ir-action-codes">
+
+        <name>Action Code Format</name>
+
+        <t>
+
+          Action codes follow the format: <tt>!</tt> followed by
+
+          <tt>UPPERCASE_VERB</tt> where the verb consists of uppercase
+
+          ASCII letters and underscores. The formal grammar in ABNF
+
+          <xref target="RFC5234"/> is:
+
+        </t>
+
+        <sourcecode type="abnf" markers="true" name="action-code-abnf">
+
+action-code = "!" 1*UPPER-LETTER *( "_" 1*UPPER-LETTER )
+
+UPPER-LETTER = %x41-5A  ; A-Z
+
+        </sourcecode>
+
+        <t>
+
+          Lowercase function names in the code frontend are derived by
+
+          removing the <tt>!</tt> prefix and converting to lowercase:
+
+          <tt>!CANCEL</tt> -> <tt>cancel</tt>.
+
+        </t>
+
+      </section>
+
+      <section anchor="ir-whitelist">
+
+        <name>Verb Whitelist</name>
+
+        <t>
+
+          The following 13 verbs are approved as IR action code primitives.
+
+          Each verb has been verified to be single-token (exactly 1 token)
+
+          across six production tokenizers: gpt-4o (o200k_base), gpt-3.5
+
+          (cl100k_base), llama-2, qwen2.5, claude, and gemini. The complete
+
+          census data is available in the reference implementation
+
+          <xref target="SILP-CODE"/>.
+
+        </t>
+
+        <table anchor="tab-whitelist">
+        <name>Approved Verb Whitelist (13 Verbs, All Single-Token Across 6 Tokenizers)</name>
+
+          <thead>
+
+            <tr><th>Action Code</th><th>Function Name</th><th>Single-Token (all 6)</th><th>UNK-Free (all 6)</th></tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr><td><tt>!CANCEL</tt></td><td><tt>cancel</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!START</tt></td><td><tt>start</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!EMAIL</tt></td><td><tt>email</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!FETCH</tt></td><td><tt>fetch</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!PROCESS</tt></td><td><tt>process</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!TRANSLATE</tt></td><td><tt>translate</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!BOOK</tt></td><td><tt>book</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!ROUTE</tt></td><td><tt>route</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!SEARCH</tt></td><td><tt>search</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!UPDATE</tt></td><td><tt>update</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!SUGGEST</tt></td><td><tt>suggest</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!SWITCH</tt></td><td><tt>switch</tt></td><td>Yes</td><td>Yes</td></tr>
+
+            <tr><td><tt>!NOTIFY</tt></td><td><tt>notify</tt></td><td>Yes</td><td>Yes</td></tr>
+
+          </tbody>
+
+        </table>
+
+        <t>
+
+          The following verbs are EXCLUDED from the whitelist and MUST NOT
+
+          be used as IR action codes:
+
+        </t>
+
+        <table anchor="tab-excluded">
+        <name>Excluded Verbs</name>
+
+          <thead>
+
+            <tr><th>Verb</th><th>Token Counts Across 6 Tokenizers</th><th>Reason</th><th>Suggested Replacement</th></tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr><td><tt>!SWITCH_TOOL</tt></td><td>gpt-4o: 2, gpt-3.5: 2, llama-2: 3, qwen2.5: 2, claude: 3, gemini: 3</td><td>Multi-token (2-3 tokens). Never single-token on any tested tokenizer.</td><td><tt>!SWITCH</tt></td></tr>
+
+            <tr><td><tt>!ESCALATE</tt></td><td>gpt-4o: 3, gpt-3.5: 2, llama-2: 3, qwen2.5: 2, claude: 3, gemini: 2</td><td>Multi-token (2-3 tokens). Sub-word fragment "ate" has spurious meaning (English verb "ate").</td><td>Use a single-token alternative</td></tr>
+
+          </tbody>
+
+        </table>
+
+      </section>
+
+      <section anchor="ir-json-schema">
+
+        <name>JSON Schema Representation</name>
+
+        <t>
+
+          The complete IR schema is represented below as a JSON Schema
+
+          (Draft 2020-12). This is the normative representation of the
+
+          IR structure. Implementations MUST validate IR objects against
+
+          this schema before processing.
+
+        </t>
+
+        <sourcecode type="json" markers="true" name="silp-ir-schema.json">
+
+{
+
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+
+  "$id": "https://github.com/Juwan-Hwang/polyglotir",
+  "title": "SILP IR",
+
+  "type": "object",
+
+  "additionalProperties": false,
+
+  "required": ["intent", "meta"],
+
+  "properties": {
+
+    "silp": {
+      "type": "string",
+      "pattern": "^v\\d+$",
+      "default": "v1"
+    },
+
+    "version": { "type": "string", "default": "ir-v0.1" },
+
+    "intent": { "type": "string", "pattern": "^![A-Z][A-Z_]*$" },
+
+    "entities": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "additionalProperties": true,
+
+        "required": ["id", "value"],
+
+        "properties": {
+
+          "id": { "type": "string" },
+
+          "value": { "type": "string" },
+
+          "action": {
+          "type": "string",
+          "pattern": "^![A-Z][A-Z_]*$"
+        }
+
+        }
+
+      }
+
+    },
+
+    "constraints": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "additionalProperties": true,
+
+        "required": ["type", "value"],
+
+        "properties": {
+
+          "type": { "type": "string" },
+
+          "value": { "type": "string" },
+
+          "time": { "type": "string" }
+
+        }
+
+      }
+
+    },
+
+    "alternatives": {
+
+      "type": "array",
+
+      "items": {
+
+        "type": "object",
+
+        "additionalProperties": true,
+
+        "required": ["action"],
+
+        "properties": {
+
+          "action": {
+          "type": "string",
+          "pattern": "^![A-Z][A-Z_]*$"
+        },
+
+          "target": { "type": "string" },
+
+          "location": { "type": "string" }
+
+        }
+
+      }
+
+    },
+
+    "meta": {
+
+      "type": "object",
+
+      "additionalProperties": true,
+
+      "required": ["req_id"],
+
+      "properties": {
+
+        "req_id": { "type": "string", "pattern": "^[a-f0-9]{4,8}$" },
+
+        "session_id": { "type": "string" },
+
+        "priority": { "type": "integer", "default": 0 },
+
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 1.0
+        },
+
+        "seq": { "type": "array", "items": { "type": "string" } },
+
+        "out": { "type": "string", "default": "natural" },
+
+        "next_agent": { "type": "string" }
+
+      }
+
+    }
+
+  }
+
+}
+
+        </sourcecode>
+
+      </section>
+
+    </section>
+
+    <!-- ======================== Section 4: Layer 2 -?Frontends ======================== -->
+
+    <section anchor="layer-2">
+
+      <name>Layer 2: Surface Layer (Pluggable Frontends)</name>
+
+      <t>
+
+        Five frontends compile IR to surface string. Two frontends
+
+        (<tt>code</tt> and <tt>json</tt>) are lossless codecs satisfying
+
+        <tt>decode(compile(ir)) == ir</tt>. Three frontends
+
+        (<tt>natural</tt>, <tt>nl_json</tt>, <tt>llmlingua2</tt>) are
+
+        control baselines that do not support decode.
+
+      </t>
+
+      <table anchor="tab-frontends">
+        <name>Surface Frontends</name>
+
+        <thead>
+
+          <tr><th>Frontend</th><th>Description</th><th>Round-trip</th></tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr><td><tt>code</tt></td><td>Function-call syntax</td><td>Yes (lossless)</td></tr>
+
+          <tr><td><tt>json</tt></td><td>Flat JSON slots</td><td>Yes (lossless)</td></tr>
+
+          <tr><td><tt>natural</tt></td><td>Unstructured prose</td><td>No (control)</td></tr>
+
+          <tr><td><tt>nl_json</tt></td><td>Natural language wrapped in JSON</td><td>No (control)</td></tr>
+
+          <tr><td><tt>llmlingua2</tt></td><td>LLMLingua-2 compressed natural language</td><td>No (lossy)</td></tr>
+
+        </tbody>
+
+      </table>
+
+      <section anchor="frontend-code">
+
+        <name>Code Frontend</name>
+
+        <t>
+
+          The code frontend maps IR action codes to lowercase function calls
+
+          (<tt>!CANCEL</tt> -> <tt>cancel()</tt>), compiles constraints
+
+          as boolean conditions, entities as positional or keyword arguments,
+
+          and alternatives as <tt>else:</tt> branches.
+
+        </t>
+
+        <t>The general compilation form in ABNF <xref target="RFC5234"/> is:</t>
+
+        <sourcecode type="abnf" markers="true" name="code-frontend-abnf">
+
+code-frontend = [ "if " condition ": " ] actions
+               [ " else: " alt-actions ]
+
+condition     = constraint *( " and " constraint )
+
+constraint    = negation / operator-form / func-call
+
+negation      = "!" verb [ "(" time ")" ]
+
+operator-form = verb operator value [ ", " time ]
+
+func-call     = verb "(" [ subject "," ] value [ "," time ] ")"
+
+actions       = primary-call *( "; " secondary-call )
+
+primary-call  = fn-name "(" [ args ] ")"
+
+secondary-call = fn-name "(" [ positional-args ] ")"
+
+alt-actions   = alt-call *( "; " alt-call )
+
+alt-call      = fn-name "(" [ target [ "@" location ]
+                 / "loc=" location ] ")"
+
+args          = arg *( "," arg )
+
+arg           = positional-arg / kw-arg
+
+positional-arg = value
+
+kw-arg        = id "=" value
+
+fn-name       = 1*LOWER-LETTER *( "_" 1*LOWER-LETTER )
+
+verb          = 1*UPPER-LETTER *( "_" 1*UPPER-LETTER )
+
+LOWER-LETTER  = %x61-7A  ; a-z
+
+UPPER-LETTER  = %x41-5A  ; A-Z
+
+        </sourcecode>
+
+        <t>Examples:</t>
+
+        <sourcecode type="text" markers="false" name="code-examples">
+
+# Negation logic
+
+if !rain(t+1): start(hike) else start(cards@indoor)
+
+# Multi-constraint with secondary action
+
+if loc(me,Beijing,t+1am): cancel(flight,t+1pm); email(zhangsan)
+
+# Keyword arguments
+
+translate(src=fr_rev_bold, tgt=shakespeare_en, style=archaic_heavy)
+
+# Operator condition
+
+if weather>rain: switch(indoor_activity)
+
+# Nested constraints
+
+if budget&lt;=500 and rating&gt;=4.0: book(hotel,downtown,t+5)
+
+        </sourcecode>
+
+      </section>
+
+      <section anchor="frontend-json">
+
+        <name>JSON Frontend</name>
+
+        <t>
+
+          The JSON frontend renders the IR as a flat JSON object
+
+          <xref target="RFC8259"/> with only semantic slots -- no code
+
+          syntax. This isolates "format contribution" (structured JSON)
+
+          from "code vocabulary prior" (function-call syntax).
+
+        </t>
+
+        <t>
+
+          Entities matching the root intent are flattened to top-level
+
+          slots. Secondary actions (entities whose <tt>action</tt> differs
+
+          from <tt>intent</tt>) are grouped under keys prefixed with
+
+          <tt>action_</tt>.
+
+        </t>
+
+        <sourcecode type="json" markers="true" name="json-frontend-example">
+
+{
+
+  "intent": "!CANCEL",
+
+  "act": "flight",
+
+  "action_email": ["zhangsan"],
+
+  "constraints": [
+
+    {"type": "loc",
+       "value": "Beijing",
+       "time": "t+1am",
+       "subject": "me"}
+
+  ]
+
+}
+
+        </sourcecode>
+
+      </section>
+
+      <section anchor="frontend-natural">
+
+        <name>Natural Language Frontend</name>
+
+        <t>
+
+          The natural frontend renders the IR as unstructured English prose.
+
+          It is a control baseline and does NOT support decode. Example
+
+          output: "If not rain at t+1, start hike otherwise start cards
+
+          at indoor."
+
+        </t>
+
+      </section>
+
+      <section anchor="frontend-nl-json">
+
+        <name>NL+JSON Frontend</name>
+
+        <t>
+
+          The nl_json frontend wraps the exact same prose produced by the
+
+          natural frontend inside a JSON <tt>task_description</tt> field.
+
+          It is a control baseline isolating the JSON-container effect and
+
+          does NOT support decode.
+
+        </t>
+
+        <sourcecode type="json" markers="true" name="nl-json-example">
+
+{"task_description":
+ "If not rain at t+1, start hike otherwise start cards at indoor."}
+
+        </sourcecode>
+
+      </section>
+
+      <section anchor="frontend-llmlingua2">
+
+        <name>LLMLingua-2 Frontend</name>
+
+        <t>
+
+          The llmlingua2 frontend compresses the natural frontend's output
+
+          using LLMLingua-2 (XLM-RoBERTa-large, rate=0.5)
+
+          <xref target="LLMLingua2"/>. LLMLingua-2 is the successor to
+
+          LLMLingua <xref target="LLMLingua"/>, which uses perplexity-based
+
+          compression. It is a lossy compression baseline and does NOT support
+
+          decode. The compression rate (default: 0.5) is configurable.
+
+        </t>
+
+      </section>
+
+      <section anchor="frontend-round-trip">
+
+        <name>Lossless Round-Trip Guarantee</name>
+
+        <t>
+
+          For the <tt>code</tt> and <tt>json</tt> frontends, the following
+
+          invariant MUST hold for all valid IRs:
+
+        </t>
+
+        <sourcecode type="pseudocode" markers="true" name="round-trip-invariant">
+
+decode(compile(ir)) is semantically equivalent to ir
+
+        </sourcecode>
+
+        <t>
+          "Semantically equivalent" means the decoded IR preserves intent,
+          entities, constraints, and alternatives. This guarantee is
+          semantic, not byte-level: the IR does not define a canonical
+          serialization or byte identity. The <tt>meta.req_id</tt> of the
+          decoded IR is regenerated from the compiled text via SHA-256
+          hash truncation, so it may differ from the original if the
+          original was not generated by compile. All other fields MUST be
+          preserved. Implementations requiring byte-level canonicalization
+          (e.g., for audit binding) MUST use an external mechanism rather
+          than relying on IR byte identity.
+        </t>
+
+      </section>
+
+    </section>
+
+    <!-- ======================== Section 5: Layer 3 -?Meta-Protocol ======================== -->
+
+    <section anchor="layer-3">
+
+      <name>Layer 3: Meta-Protocol Layer</name>
+
+      <t>
+
+        The meta-protocol layer handles dynamic frontend negotiation,
+
+        session management, error codes, and degradation chains. This
+
+        section specifies the error code registry and session management
+
+        parameters. Frontend negotiation via <tt>//ping</tt> probes is
+
+        partially specified.
+
+      </t>
+
+      <section anchor="error-codes">
+
+        <name>Error Codes</name>
+
+        <t>
+
+          SILP defines the following payload-decode error codes. These
+
+          exist ONLY in the payload-decode sub-layer and do NOT replace
+
+          the outer MCP/A2A JSON-RPC error mechanism.
+
+        </t>
+
+        <table anchor="tab-error-codes">
+        <name>SILP Error Codes</name>
+
+          <thead>
+
+            <tr><th>Code</th><th>Description</th></tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr><td><tt>invalid_syntax</tt></td><td>The payload does not conform to the expected frontend syntax.</td></tr>
+
+            <tr><td><tt>unsupported_version</tt></td><td>The <tt>silp</tt> version field indicates a version not supported by the receiver.</td></tr>
+
+            <tr><td><tt>unsupported_frontend</tt></td><td>The requested frontend is not implemented by the receiver.</td></tr>
+
+            <tr><td><tt>decode_failed</tt></td><td>The receiver attempted to decode the payload but the decoding process failed.</td></tr>
+
+            <tr><td><tt>timeout</tt></td><td>The session or request exceeded its time limit.</td></tr>
+
+            <tr><td><tt>session_expired</tt></td><td>The session ID is no longer valid.</td></tr>
+
+          </tbody>
+
+        </table>
+
+      </section>
+
+      <section anchor="session-management">
+
+        <name>Session Management</name>
+
+        <t>
+
+          In stateful mode, SILP sessions are identified by 2-character
+
+          session IDs. The <tt>N</tt> parameter controls heartbeat renewal
+
+          frequency: every N turns, the session context is reset. The
+
+          following N values are defined:
+
+        </t>
+
+        <ul spacing="compact">
+
+          <li><tt>N=1</tt>: Stateless (context resets every turn).</li>
+
+          <li><tt>N=5</tt>: Heartbeat every 5 turns.</li>
+
+          <li><tt>N=10</tt>: Heartbeat every 10 turns.</li>
+
+          <li><tt>N=15</tt>: Heartbeat every 15 turns.</li>
+
+          <li><tt>N=20</tt>: Heartbeat every 20 turns.</li>
+
+          <li><tt>N=9999</tt>: No heartbeat (maximum context accumulation, stateful throughout).</li>
+
+        </ul>
+
+      </section>
+
+      <section anchor="negotiation">
+
+        <name>Frontend Negotiation</name>
+
+        <t>
+
+          SILP supports dynamic frontend negotiation via a <tt>//ping</tt>
+
+          probe. A sender sends a <tt>//ping</tt> message listing its
+
+          supported frontends. The receiver responds with its supported
+
+          frontends and a preferred frontend. Both parties then use the
+
+          highest-priority mutually supported frontend.
+
+        </t>
+
+        <t>
+
+          The negotiation protocol is partially specified. The degradation
+
+          chain defines a fallback order when a negotiated frontend fails:
+
+        </t>
+
+        <sourcecode type="text" markers="false" name="degradation-chain">
+
+code -&gt; JSON -&gt; natural language
+
+        </sourcecode>
+
+      </section>
+
+    </section>
+
+    <!-- ======================== Section 6: Layers 4-5 ======================== -->
+
+    <section anchor="layers-4-5">
+
+      <name>Layers 4 and 5: Optimization and Migration (Future Work)</name>
+
+      <section anchor="layer-4">
+
+        <name>Layer 4: Optimization Layer</name>
+
+        <t>
+
+          Layer 4 defines a multi-objective fitness function for frontend
+
+          selection and IR optimization. The fitness function is:
+
+        </t>
+
+        <sourcecode type="text" markers="true" name="fitness-function">
+
+Fitness = alpha * task_success
+
+        + alpha_prime * cross_model_fidelity
+
+        + beta * compression
+
+        - gamma * human_unreadability
+
+        - delta * PPL
+
+        - epsilon * tokenizer_variance
+
+        - zeta * cross_model_ambiguity
+
+        </sourcecode>
+
+        <t>
+
+          Constrained by alpha + alpha_prime >= 0.6 and a hard fidelity
+
+          floor. This layer is design-only and not yet experimentally
+
+          validated.
+
+        </t>
+
+      </section>
+
+      <section anchor="layer-5">
+
+        <name>Layer 5: Migration Layer</name>
+
+        <t>
+
+          Layer 5 is a proposed migration screening layer intended to test
+
+          ranking preservation: if small models and API-reported endpoints
+
+          rank frontends similarly (high Spearman rho), small models
+
+          could serve as proxies for frontend evaluation. This layer is
+
+          not yet validated.
+
+        </t>
+
+      </section>
+
+    </section>
+
+    <!-- ======================== Section 7: Relationship to Existing Agent Protocols ======================== -->
+
+    <section anchor="transport">
+      <name>Relationship to Existing Agent Protocols</name>
+
+      <t>
+        SILP is designed as a payload-layer codec that complements
+        existing agent protocols. It does not define its own transport
+        mechanism, discovery protocol, or tool-calling interface.
+        Instead, SILP-encoded strings can be embedded within the payload
+        fields of multiple existing protocols without modifying their
+        semantics. The following table summarizes the relationship:
+      </t>
+
+      <table anchor="tab-protocol-comparison">
+        <name>SILP Relationship to Existing Agent Protocols</name>
+        <thead>
+          <tr><th>Protocol</th><th>Problem Solved</th><th>Relationship to SILP</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>AIDIP</td><td>Agent discovery and invocation (metadata, search, RESTful invoke)</td><td>Complementary: SILP can encode the <tt>inputs</tt> and <tt>outputs</tt> fields of AIDIP invocations</td></tr>
+          <tr><td>A2A</td><td>Agent-to-agent task lifecycle, message transport, artifact exchange</td><td>Complementary: SILP can be embedded in A2A <tt>task</tt>, <tt>message</tt>, or <tt>artifact</tt> fields</td></tr>
+          <tr><td>MCP</td><td>Agent-to-tool invocation protocol</td><td>Complementary: SILP can encode the <tt>params</tt> field of MCP JSON-RPC requests</td></tr>
+        </tbody>
+      </table>
+
+      <section anchor="aidip-integration">
+        <name>AIDIP Integration</name>
+        <t>
+          The AI Agent Discovery and Invocation Protocol (AIDIP), as
+          discussed in recent IETF work, defines a RESTful interface
+          for agent discovery (<tt>POST /agents/search</tt>) and
+          invocation (<tt>POST /agents/{id}/invoke</tt>). AIDIP's
+          invocation interface accepts an <tt>inputs</tt> field
+          containing the task description. A SILP-encoded string can
+          replace the natural-language <tt>inputs</tt> content, providing
+          cross-model semantic consistency without modifying AIDIP's
+          discovery or invocation semantics.
+        </t>
+      </section>
+
+      <section anchor="mcp-integration">
+        <name>MCP Integration</name>
+        <t>
+          In MCP <xref target="MCP"/>, a SILP payload is carried inside the
+          <tt>params</tt> field of a JSON-RPC request. Rather than
+          replacing the entire <tt>params</tt> object, SILP content
+          SHOULD be wrapped in a dedicated field so that the tool's
+          input schema contract is preserved:
+        </t>
+        <sourcecode type="json" markers="false" name="mcp-wrapper-example">
+{
+  "silp_encoding": "code",
+  "silp_payload": "if !rain(t+1): start(hike)",
+  ...other tool params...
+}
+        </sourcecode>
+        <t>
+          This allows SILP-encoded instructions to coexist with
+          structured tool parameters without breaking type contracts.
+        </t>
+      </section>
+
+      <section anchor="a2a-integration">
+        <name>A2A Integration</name>
+        <t>
+          In A2A <xref target="A2A"/>, a SILP payload is carried inside
+          <tt>task</tt>, <tt>message</tt>, or <tt>artifact</tt> fields.
+          SILP does not replace A2A's lifecycle management.
+        </t>
+      </section>
+
+    </section>
+
+
+    <!-- ======================== Changes since -00 ======================== -->
+    <section anchor="changes">
+      <name>Changes since -00</name>
+      <t>
+        The following changes were made in response to community feedback
+        received on the IETF agent2agent mailing list:
+      </t>
+      <ol spacing="normal">
+        <li>Clarified that <tt>req_id</tt> and <tt>session_id</tt> are
+        correlation conveniences, not security identifiers, and provide
+        no replay protection (Section 8.3).</li>
+        <li>Renamed "canonical IR" to "reference IR" throughout, and
+        added an explicit statement that the round-trip guarantee is
+        semantic, not byte-level. Byte-level canonicalization is out of
+        scope for SILP (Section 4.6).</li>
+        <li>Softened the verb whitelist security claim: the whitelist is
+        advisory, not enforced by the schema. Implementations requiring
+        strict action-space bounding SHOULD enforce it via schema
+        validation (Section 8.2).</li>
+        <li>Unified ABNF grammar with code examples: replaced
+        <tt>then</tt> with <tt>:</tt> in Example 4 to match the grammar
+        (Section 4.1).</li>
+        <li>Removed the undefined <tt>math</tt> frontend from the
+        degradation chain. The chain is now <tt>code -&gt; JSON -&gt;
+        natural language</tt> (Section 5.3).</li>
+        <li>Introduced an explicit SILP wrapper field
+        (<tt>silp_encoding</tt> + <tt>silp_payload</tt>) for MCP
+        integration, preserving the tool's input schema contract
+        (Section 7.2).</li>
+      </ol>
+    </section>
+
+    <!-- ======================== Changes since -01 ======================== -->
+    <section anchor="changes-since-01">
+      <name>Changes since -01</name>
+      <t>
+        The following changes were made in response to continued
+        community discussion on the IETF agent2agent mailing list:
+      </t>
+      <ol spacing="normal">
+        <li>Added a normative "Sequence (seq) Semantics" subsection
+        clarifying that <tt>seq</tt> expresses strict, unconditional
+        serial order, and that the four recognized ordering keywords
+        (<tt>parallel</tt>, <tt>sequential</tt>, <tt>reason_first</tt>,
+        <tt>reason_last</tt>) currently carry no defined behavior
+        (Section 3.5.1).</li>
+      </ol>
+    </section>
+
+    <!-- ======================== Section 8: Security Considerations ======================== -->
+
+    <section anchor="security">
+
+      <name>Security Considerations</name>
+
+      <section anchor="sec-zero-width">
+
+        <name>Zero-Width and Homoglyph Attacks</name>
+
+        <t>
+
+          SILP payloads are text-based and therefore susceptible to
+
+          zero-width character injection and homoglyph substitution attacks.
+
+          Testing across six tokenizers (gpt-4o, gpt-3.5, llama-2, qwen2.5,
+
+          claude, gemini) confirmed that 4 types of zero-width characters
+
+          (ZWSP, ZWNJ, ZWJ, BOM) and Latin-to-Cyrillic homoglyph
+
+          substitutions alter tokenization in all 144 probes conducted
+
+          (5 probe verbs for zero-width injection, 2 probe verbs for
+
+          homoglyph substitution, 6 tokenizers).
+
+        </t>
+
+        <t>
+
+          Implementations SHOULD sanitize input by stripping zero-width
+
+          characters (U+200B, U+200C, U+200D, U+FEFF) and normalizing
+
+          homoglyphs before processing SILP payloads. However, this does
+
+          not constitute a complete security guarantee -- visual
+
+          invisibility, preprocessing normalization, and downstream parser
+
+          behavior are separate concerns.
+
+        </t>
+
+      </section>
+
+      <section anchor="sec-payload-injection">
+
+        <name>Payload Injection</name>
+
+        <t>
+
+                    SILP payloads carry task instructions. Implementations MUST NOT
+          allow SILP payloads to carry content that bypasses safety filters.
+          The verb whitelist (see <xref target="ir-whitelist"/>) is
+          advisory: it provides a recommended vocabulary of verified
+          single-token verbs. The IR schema's action-code pattern permits
+          any <tt>!UPPERCASE_VERB</tt>, so the whitelist is descriptive
+          guidance, not a schema-enforced constraint. Implementations
+          requiring strict action-space bounding SHOULD enforce the
+          whitelist via schema validation. External validation is
+          REQUIRED for consequential actions.
+
+        </t>
+
+      </section>
+
+      <section anchor="sec-req-id">
+        <name>Request ID Collision</name>
+        <t>
+          The <tt>req_id</tt> field uses 4-8 hex characters. With 4
+          hex characters (16 bits), the birthday-bound collision probability
+          for n=1,000 requests is approximately 99.9%. Implementations MUST
+          use 8 hex characters (32 bits) as the default to minimize
+          collision risk.
+        </t>
+        <t>
+          The <tt>req_id</tt> and <tt>session_id</tt> fields are
+          correlation conveniences, not security identifiers. They
+          provide no replay protection and are not suitable as sole
+          correlation keys without an external uniqueness scope.
+          Implementations requiring replay protection or audit-grade
+          traceability MUST use an external mechanism rather than
+          relying on <tt>req_id</tt> or <tt>session_id</tt> alone.
+        </t>
+      </section>
+
+      <section anchor="sec-model-identity">
+
+        <name>Model Identity</name>
+
+        <t>
+
+          SILP operates through a black-box text interface and does not
+
+          verify the identity of the receiving model. If a proxy misroutes
+
+          requests (e.g., serving a different model for one provider), the
+
+          cross-model comparison would be compromised. This is a known
+
+          limitation of the black-box approach.
+
+        </t>
+
+      </section>
+
+      <section anchor="sec-lossy-compression">
+
+        <name>Lossy Compression Risks</name>
+
+        <t>
+
+          The <tt>llmlingua2</tt> frontend uses lossy ML-based compression
+
+          that may remove or obscure negation markers and entity boundaries.
+
+          Implementations MUST NOT use <tt>llmlingua2</tt> for payloads
+
+          where semantic precision is critical, particularly for negation
+
+          logic. The <tt>code</tt> and <tt>json</tt> frontends are
+
+          RECOMMENDED for all production use.
+
+        </t>
+
+      </section>
+
+    </section>
+
+    <!-- ======================== Section 9: IANA Considerations ======================== -->
+
+    <section anchor="iana">
+
+      <name>IANA Considerations</name>
+
+      <t>
+
+        This document has no IANA actions.
+
+      </t>
+
+      <t>
+
+        Future versions of this specification may request registration of:
+
+      </t>
+
+      <ul spacing="compact">
+
+        <li>A SILP frontend name registry (e.g., <tt>code</tt>, <tt>json</tt>, <tt>natural</tt>, <tt>nl_json</tt>, <tt>llmlingua2</tt>).</li>
+
+        <li>A SILP error code registry (see <xref target="tab-error-codes"/>).</li>
+
+        <li>A SILP verb whitelist registry (see <xref target="tab-whitelist"/>).</li>
+
+      </ul>
+
+    </section>
+
+  </middle>
+
+  <!-- ======================== BACK MATTER ======================== -->
+
+  <back>
+
+    <!-- ======================== References ======================== -->
+
+    <references title="Normative References">
+
+      <reference anchor="RFC2119" target="https://www.rfc-editor.org/rfc/rfc2119">
+
+        <front>
+
+          <title>Key words for use in RFCs to Indicate Requirement Levels</title>
+
+          <author initials="S." surname="Bradner" fullname="Scott Bradner"/>
+
+          <date year="1997" month="March"/>
+
+        </front>
+
+        <seriesInfo name="BCP" value="14"/>
+
+        <seriesInfo name="RFC" value="2119"/>
+
+      </reference>
+
+      <reference anchor="RFC8174" target="https://www.rfc-editor.org/rfc/rfc8174">
+
+        <front>
+
+          <title>Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words</title>
+
+          <author initials="B." surname="Leiba" fullname="Barry Leiba"/>
+
+          <date year="2017" month="May"/>
+
+        </front>
+
+        <seriesInfo name="BCP" value="14"/>
+
+        <seriesInfo name="RFC" value="8174"/>
+
+      </reference>
+
+      <reference anchor="RFC8259" target="https://www.rfc-editor.org/rfc/rfc8259">
+
+        <front>
+
+          <title>The JavaScript Object Notation (JSON) Data Interchange Format</title>
+
+          <author initials="T." surname="Bray" fullname="Tim Bray"/>
+
+          <date year="2017" month="December"/>
+
+        </front>
+
+        <seriesInfo name="STD" value="90"/>
+
+        <seriesInfo name="RFC" value="8259"/>
+
+      </reference>
+
+      <reference anchor="RFC5234" target="https://www.rfc-editor.org/rfc/rfc5234">
+
+        <front>
+
+          <title>Augmented BNF for Syntax Specifications: ABNF</title>
+
+          <author initials="D." surname="Crocker" fullname="Dave Crocker"/>
+
+          <author initials="P." surname="Overell" fullname="Paul Overell"/>
+
+          <date year="2008" month="January"/>
+
+        </front>
+
+        <seriesInfo name="STD" value="68"/>
+
+        <seriesInfo name="RFC" value="5234"/>
+
+      </reference>
+
+    </references>
+
+    <references title="Informative References">
+
+      <reference anchor="MCP" target="https://modelcontextprotocol.io">
+
+        <front>
+
+          <title>Model Context Protocol (MCP)</title>
+
+          <author>
+
+            <organization>Anthropic</organization>
+
+          </author>
+
+          <date year="2024"/>
+
+        </front>
+
+      </reference>
+
+      <reference anchor="A2A" target="https://a2a-protocol.dev">
+
+        <front>
+
+          <title>Agent2Agent (A2A) Protocol</title>
+
+          <author>
+
+            <organization>Google</organization>
+
+          </author>
+
+          <date year="2024"/>
+
+        </front>
+
+      </reference>
+      <reference anchor="LLMLingua" target="https://aclanthology.org/2023.emnlp-main.825/">
+        <front>
+          <title>LLMLingua: Compressing Prompts for Accelerated Inference of Large Language Models</title>
+          <author initials="H." surname="Jiang" fullname="Huiqiang Jiang"/>
+          <author initials="Q." surname="Wu" fullname="Qianhui Wu"/>
+          <author initials="C-Y." surname="Lin" fullname="Chin-Yew Lin"/>
+          <author initials="Y." surname="Yang" fullname="Yuqing Yang"/>
+          <author initials="L." surname="Qiu" fullname="Lili Qiu"/>
+          <date year="2023" month="December"/>
+        </front>
+        <refcontent>EMNLP 2023, pages 13358-13376</refcontent>
+      </reference>
+
+      <reference anchor="AMR" target="https://aclanthology.org/W13-2322/">
+        <front>
+          <title>Abstract Meaning Representation for Sembanking</title>
+          <author initials="L." surname="Banarescu" fullname="Laura Banarescu"/>
+          <date year="2013"/>
+        </front>
+        <refcontent>Proceedings of the 7th Linguistic Annotation Workshop, pages 178-186</refcontent>
+      </reference>
+
+      <reference anchor="LLMLingua2" target="https://arxiv.org/abs/2403.12968">
+
+        <front>
+
+          <title>LLMLingua-2: Data Distillation for Efficient and Faithful Task-Agnostic Prompt Compression</title>
+
+          <author initials="Z." surname="Pan" fullname="Zhuoshi Pan"/>
+
+          <author initials="Q." surname="Wu" fullname="Qianhui Wu"/>
+
+          <author initials="H." surname="Jiang" fullname="Huiqiang Jiang"/>
+
+          <date year="2024"/>
+
+        </front>
+
+        <refcontent>Findings of ACL 2024. arXiv:2403.12968</refcontent>
+
+      </reference>
+
+      <reference anchor="SILP-PAPER" target="https://doi.org/10.5281/zenodo.21396849">
+
+        <front>
+
+          <title>SILP: A Semantic Interlingua Layer Protocol for Cross-Model Agent Communication</title>
+
+          <author initials="J." surname="Hwang" fullname="Juwan Hwang"/>
+
+          <date year="2026"/>
+
+        </front>
+
+        <refcontent>Zenodo. DOI: 10.5281/zenodo.21396849</refcontent>
+
+      </reference>
+
+      <reference anchor="SILP-CODE" target="https://github.com/Juwan-Hwang/polyglotir">
+
+        <front>
+
+          <title>SILP Reference Implementation</title>
+
+          <author initials="J." surname="Hwang" fullname="Juwan Hwang"/>
+
+          <date year="2026"/>
+
+        </front>
+
+        <refcontent>GitHub repository: Juwan-Hwang/polyglotir</refcontent>
+
+      </reference>
+      </references>
+
+    <!-- ======================== Appendix A: Examples ======================== -->
+
+    <section anchor="appendix-examples">
+
+      <name>IR Examples</name>
+
+      <t>
+
+        This appendix provides examples of SILP IR objects and their
+
+        compilation under each frontend. All examples are drawn from the
+
+        27-case test suite described in the accompanying research paper
+
+        <xref target="SILP-PAPER"/>.
+
+      </t>
+
+      <section anchor="example-1">
+
+        <name>Example 1: Negation Logic with Alternative</name>
+
+        <sourcecode type="json" markers="true" name="example1-ir">
+
+{
+
+  "silp": "v1",
+
+  "intent": "!START",
+
+  "entities": [
+
+    {"id": "act", "value": "hike", "action": "!START"}
+
+  ],
+
+  "constraints": [
+
+    {"type": "!rain", "value": "true", "time": "t+1"}
+
+  ],
+
+  "alternatives": [
+
+    {"action": "!START", "target": "cards", "location": "indoor"}
+
+  ],
+
+  "meta": {"req_id": "a1b2c3d4", "out": "code"}
+
+}
+
+        </sourcecode>
+
+        <t>Code frontend output:</t>
+
+        <sourcecode type="text" markers="false" name="example1-code">
+
+if !rain(t+1): start(hike) else start(cards@indoor)
+
+        </sourcecode>
+
+        <t>JSON frontend output:</t>
+
+        <sourcecode type="json" markers="false" name="example1-json">
+
+{"intent":"!START",
+ "act":"hike",
+ "constraints":[{"type":"!rain","value":"true","time":"t+1"}],
+ "alternatives":[{"action":"!START","target":"cards",
+  "location":"indoor"}]}
+
+        </sourcecode>
+
+        <t>Natural frontend output:</t>
+
+        <sourcecode type="text" markers="false" name="example1-natural">
+
+If not rain at t+1, start hike otherwise start cards at indoor.
+
+        </sourcecode>
+
+      </section>
+
+      <section anchor="example-2">
+
+        <name>Example 2: Multi-Constraint with Secondary Action</name>
+
+        <sourcecode type="json" markers="true" name="example2-ir">
+
+{
+
+  "silp": "v1",
+
+  "intent": "!CANCEL",
+
+  "entities": [
+
+    {"id": "act", "value": "flight", "action": "!CANCEL"},
+
+    {"id": "time", "value": "t+1pm", "action": "!CANCEL"},
+
+    {"id": "act", "value": "zhangsan", "action": "!EMAIL"}
+
+  ],
+
+  "constraints": [
+
+    {"type": "loc",
+       "value": "Beijing",
+       "time": "t+1am",
+       "subject": "me"}
+
+  ],
+
+  "alternatives": [],
+
+  "meta": {"req_id": "e5f6g7h8", "out": "code"}
+
+}
+
+        </sourcecode>
+
+        <t>Code frontend output:</t>
+
+        <sourcecode type="text" markers="false" name="example2-code">
+
+if loc(me,Beijing,t+1am): cancel(flight,t+1pm); email(zhangsan)
+
+        </sourcecode>
+
+      </section>
+
+      <section anchor="example-3">
+
+        <name>Example 3: Keyword Arguments (Detail Preservation)</name>
+
+        <sourcecode type="json" markers="true" name="example3-ir">
+
+{
+
+  "silp": "v1",
+
+  "intent": "!TRANSLATE",
+
+  "entities": [
+
+    {"id": "src", "value": "fr_rev_bold", "action": "!TRANSLATE"},
+
+    {"id": "tgt", "value": "shakespeare_en", "action": "!TRANSLATE"},
+
+    {"id": "style", "value": "archaic_heavy", "action": "!TRANSLATE"}
+
+  ],
+
+  "constraints": [],
+
+  "alternatives": [],
+
+  "meta": {"req_id": "1a2b3c4d", "out": "code"}
+
+}
+
+        </sourcecode>
+
+        <t>Code frontend output:</t>
+
+        <sourcecode type="text" markers="false" name="example3-code">
+
+translate(src=fr_rev_bold, tgt=shakespeare_en, style=archaic_heavy)
+
+        </sourcecode>
+
+      </section>
+
+      <section anchor="example-4">
+
+        <name>Example 4: Nested Constraints</name>
+
+        <sourcecode type="text" markers="false" name="example4-code">
+
+if budget&lt;=500 and rating&gt;=4.0: book(hotel,downtown,t+5)
+
+        </sourcecode>
+
+      </section>
+
+      <section anchor="example-5">
+
+        <name>Example 5: Parallel Actions with Sequencing</name>
+
+        <sourcecode type="text" markers="false" name="example5-code">
+
+fetch(data) -&gt; process -&gt; email(result) with timeout
+
+        </sourcecode>
+
+      </section>
+
+    </section>
+
+    <!-- ======================== Appendix B: Structural Tokens ======================== -->
+
+    <section anchor="appendix-tokens">
+
+      <name>Structural Token Verification</name>
+
+      <t>
+
+        The following 12 structural tokens are verified to be single-token
+
+        on all 6 production tokenizers (gpt-4o, gpt-3.5, llama-2, qwen2.5,
+
+        claude, gemini) with zero UNK occurrences. The complete census
+
+        data is available in the reference implementation
+
+        <xref target="SILP-CODE"/>.
+
+      </t>
+
+      <table anchor="tab-structural-tokens">
+        <name>Structural Tokens (All Single-Token, Zero UNK, Across 6 Tokenizers)</name>
+
+        <thead>
+
+          <tr><th>Token</th><th>Category</th></tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr><td><tt>if</tt></td><td>Conditional</td></tr>
+
+          <tr><td><tt>else</tt></td><td>Conditional</td></tr>
+
+          <tr><td><tt>and</tt></td><td>Logical</td></tr>
+
+          <tr><td><tt>not</tt></td><td>Logical</td></tr>
+
+          <tr><td><tt>(</tt></td><td>Delimiter</td></tr>
+
+          <tr><td><tt>)</tt></td><td>Delimiter</td></tr>
+
+          <tr><td><tt>,</tt></td><td>Delimiter</td></tr>
+
+          <tr><td><tt>;</tt></td><td>Delimiter</td></tr>
+
+          <tr><td><tt>:</tt></td><td>Delimiter</td></tr>
+
+          <tr><td><tt>!</tt></td><td>Negation prefix</td></tr>
+
+          <tr><td><tt>@</tt></td><td>Location qualifier</td></tr>
+
+          <tr><td><tt>-&gt;</tt></td><td>Sequencing</td></tr>
+
+        </tbody>
+
+      </table>
+
+    </section>
+
+    <!-- ======================== Appendix C: Acknowledgements ======================== -->
+
+    <section anchor="acknowledgements">
+
+      <name>Acknowledgements</name>
+
+      <t>
+
+        The SILP protocol design was informed by empirical research
+
+        documented in the accompanying research paper
+
+        <xref target="SILP-PAPER"/>. The reference implementation is
+
+        available as open source <xref target="SILP-CODE"/>.
+
+      </t>
+
+    </section>
+
+  </back>
+
+</rfc>
+

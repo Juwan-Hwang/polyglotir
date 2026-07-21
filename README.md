@@ -1,7 +1,7 @@
 # SILP — Semantic Interlingua Layer Protocol
 
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21396849-blue)](https://doi.org/10.5281/zenodo.21396849)
-[![IETF Draft](https://img.shields.io/badge/IETF-draft--hwang--silp--protocol--01-blue)](https://datatracker.ietf.org/doc/draft-hwang-silp-protocol/)
+[![IETF Draft](https://img.shields.io/badge/IETF-draft--hwang--silp--protocol--02-blue)](https://datatracker.ietf.org/doc/draft-hwang-silp-protocol/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > *A black-box, text-interface payload codec for cross-model agent communication. SILP does not access or manipulate model-internal latent representations. It is a protocol layer, not a prompt compression tool — designed for honest, auditable agent-to-agent communication.*
@@ -96,8 +96,8 @@ polyglotir/
 This project's protocol specification has been submitted as an IETF
 Internet-Draft (Informational, Independent Submission):
 
-- **Draft**: [draft-hwang-silp-protocol](https://datatracker.ietf.org/doc/draft-hwang-silp-protocol/) (current: -01)
-- **Status**: Active -- -01 revises -00 based on mailing list review; see the draft's "Changes since -00" section for details
+- **Draft**: [draft-hwang-silp-protocol](https://datatracker.ietf.org/doc/draft-hwang-silp-protocol/) (current: -02)
+- **Status**: Active -- -02 adds normative seq semantics based on continued mailing list discussion; see the draft's "Changes since -01" section for details
 - **Source files**: see [`ietf-draft/`](./ietf-draft/) folder
 - **Community discussion**: introduced on the IETF `agent2agent` mailing list -- [see thread](https://mailarchive.ietf.org/arch/msg/agent2agent/qRDDvKJ4Cmu64xawdoQ9y645tSc/)
 
